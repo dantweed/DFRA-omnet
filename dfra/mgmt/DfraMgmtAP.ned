@@ -16,7 +16,7 @@
 //
 
 
-package _2016_05_04_dfra_test.dfra.mgmt;
+package dfra.dfra.mgmt;
 import inet.linklayer.ieee80211.mgmt.IIeee80211Mgmt;
 //
 // Used in 802.11 infrastructure mode: handles management frames for
@@ -48,7 +48,7 @@ simple DfraMgmtAP like IIeee80211Mgmt
         string encapDecap = default("eth") @enum("true", "false", "eth");   // if "eth", frames sent up are converted to EthernetIIFrame
         //dataRate: numeric; XXX TBD
         string radioModule = default("^.radio");   // The path to the Radio module  //FIXME remove default value
-        string macModule;               // The path to the MAC module
+        string macModule = default("DfraMac");               // The path to the MAC module
         @display("i=block/cogwheel");
         @signal[NF_L2_AP_ASSOCIATED](type="DfraMgmtAP::NotificationInfoSta");
         @signal[NF_L2_AP_DISASSOCIATED](type="DfraMgmtAP::NotificationInfoSta");

@@ -16,7 +16,7 @@
 //
 
 
-package _2016_05_04_dfra_test.dfra.mgmt;
+package dfra.dfra.mgmt;
 
 //
 // Used in 802.11 infrastructure mode: in a station (STA), this module

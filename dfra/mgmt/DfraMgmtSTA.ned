@@ -16,7 +16,7 @@
 //
 
 
-package _2016_05_04_dfra_test.dfra.mgmt;
+package dfra.dfra.mgmt;
 
 import inet.linklayer.ieee80211.mgmt.IIeee80211Mgmt;
 
@@ -33,7 +33,7 @@ simple DfraMgmtSTA like IIeee80211Mgmt
     parameters:
         string interfaceTableModule;   // The path to the InterfaceTable module
         int numChannels = default(1);  // number of channels to scan
-        string macModule;               // The path to the MAC module
+        string macModule = default("DfraMac");               // The path to the MAC module
         @display("i=block/cogwheel");
         @signal[NF_L2_ASSOCIATED](type=inet::InterfaceEntry);
         @signal[NF_L2_BEACON_LOST](type=inet::InterfaceEntry);

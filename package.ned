@@ -1,4 +1,4 @@
-package _2016_05_04_dfra_test;
+package dfra;
 
 @license(LGPL);
 @namespace(inet);

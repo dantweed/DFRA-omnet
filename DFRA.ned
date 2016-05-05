@@ -1,4 +1,4 @@
-package _2016_05_04_dfra_test;
+package dfra;
 
 
 //
@@ -24,6 +24,7 @@ import inet.networklayer.configurator.ipv4.IPv4NetworkConfigurator;
 import inet.node.inet.WirelessHost;
 import inet.node.wireless.AccessPoint;
 import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
+import dfra.dfra.mac.DfraMac;
 
 
 
@@ -36,10 +37,12 @@ network DFRA
         host[numHosts]: WirelessHost {
             @display("r=,,#707070");
             wlan[*].mgmtType = "DfraMgmtSTA"; //"Ieee80211MgmtSTA";// "DfraMgmtSTA"; //"Ieee80211MgmtSTA";// "DfraMgmtSTA"; //
+            wlan[*].macType = "DfraMac";            
         }
         ap: AccessPoint {
             @display("p=213,174;r=,,#707070");
             wlan[*].mgmtType = "DfraMgmtAP"; //"Ieee80211MgmtAP";//"DfraMgmtAP"; //
+            wlan[*].macType = "DfraMac";
         }
         radioMedium: Ieee80211ScalarRadioMedium {
             @display("p=61,46");
