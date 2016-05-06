@@ -21,11 +21,12 @@ package dfra;
 
 
 import inet.networklayer.configurator.ipv4.IPv4NetworkConfigurator;
-import inet.node.inet.WirelessHost;
-import inet.node.wireless.AccessPoint;
+import dfra.dfra.node.DfraHost;
+import dfra.dfra.node.DfraAP;
 import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 import dfra.dfra.mac.DfraMac;
 
+import inet.linklayer.ieee80211.mac.Ieee80211Mac;
 
 
 network DFRA
@@ -34,15 +35,15 @@ network DFRA
         int numHosts;
         **.mgmt.numChannels = 2;
     submodules:
-        host[numHosts]: WirelessHost {
-            @display("r=,,#707070");
-            wlan[*].mgmtType = "DfraMgmtSTA"; //"Ieee80211MgmtSTA";// "DfraMgmtSTA"; //"Ieee80211MgmtSTA";// "DfraMgmtSTA"; //
-            wlan[*].macType = "DfraMac";            
+        host[numHosts]: DfraHost {
+            @display("r=,,#707070");            
+            wlan[*].mgmtType = "DfraMgmtSTA"; //"Ieee80211MgmtSTA";//
+            wlan[*].macType = "DfraMac";//"Ieee80211Mac";//"DfraMac";                      
         }
-        ap: AccessPoint {
+        ap: DfraAP {
             @display("p=213,174;r=,,#707070");
-            wlan[*].mgmtType = "DfraMgmtAP"; //"Ieee80211MgmtAP";//"DfraMgmtAP"; //
-            wlan[*].macType = "DfraMac";
+            wlan[*].mgmtType = "DfraMgmtAP";//"DfraMgmtAP"; //"Ieee80211MgmtAP";//"DfraMgmtAP"; //
+            wlan[*].macType = "DfraMac";//"Ieee80211Mac";//"DfraMac";
         }
         radioMedium: Ieee80211ScalarRadioMedium {
             @display("p=61,46");

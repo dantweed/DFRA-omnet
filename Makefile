@@ -22,6 +22,7 @@ INCLUDE_PATH = \
     -Idfra \
     -Idfra/mac \
     -Idfra/mgmt \
+    -Idfra/node \
     -Iresults
 
 # Additional object and library files to link with
@@ -136,6 +137,7 @@ clean:
 	$(Q)-rm -f dfra/*_m.cc dfra/*_m.h dfra/*_sm.cc dfra/*_sm.h
 	$(Q)-rm -f dfra/mac/*_m.cc dfra/mac/*_m.h dfra/mac/*_sm.cc dfra/mac/*_sm.h
 	$(Q)-rm -f dfra/mgmt/*_m.cc dfra/mgmt/*_m.h dfra/mgmt/*_sm.cc dfra/mgmt/*_sm.h
+	$(Q)-rm -f dfra/node/*_m.cc dfra/node/*_m.h dfra/node/*_sm.cc dfra/node/*_sm.h
 	$(Q)-rm -f results/*_m.cc results/*_m.h results/*_sm.cc results/*_sm.h
 
 cleanall: clean
@@ -143,7 +145,7 @@ cleanall: clean
 
 depend:
 	$(qecho) Creating dependencies...
-	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc results/*.cc
+	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/node/*.cc results/*.cc
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 $O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \

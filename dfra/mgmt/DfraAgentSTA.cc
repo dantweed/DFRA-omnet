@@ -38,7 +38,7 @@ simsignal_t DfraAgentSTA::dropConfirmSignal = registerSignal("dropConfirm");
 void DfraAgentSTA::initialize(int stage)
 {
     cSimpleModule::initialize(stage);
-
+    EV << "agent init!" ;
     if (stage == INITSTAGE_LOCAL) {
         // read parameters
         activeScan = par("activeScan");

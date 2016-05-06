@@ -19,6 +19,7 @@
 package dfra.dfra.mgmt;
 
 import inet.linklayer.ieee80211.mgmt.IIeee80211Mgmt;
+import inet.linklayer.ieee80211.mgmt.*;
 
 
 //
@@ -44,7 +45,7 @@ simple DfraMgmtSTA like IIeee80211Mgmt
         output upperLayerOut;
         input macIn @labels(Ieee80211Frame);
         output macOut @labels(Ieee80211Frame);
-        input agentIn @loose;   // used for attaching an agent algorithm
-        output agentOut @loose; // used for attaching an agent algorithm
+        input agentIn;   // used for attaching an agent algorithm
+        output agentOut; // used for attaching an agent algorithm
 }
 

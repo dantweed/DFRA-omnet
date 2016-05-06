@@ -50,10 +50,11 @@ simple DfraMgmtAP like IIeee80211Mgmt
         string radioModule = default("^.radio");   // The path to the Radio module  //FIXME remove default value
         string macModule = default("DfraMac");               // The path to the MAC module
         @display("i=block/cogwheel");
-        @signal[NF_L2_AP_ASSOCIATED](type="DfraMgmtAP::NotificationInfoSta");
-        @signal[NF_L2_AP_DISASSOCIATED](type="DfraMgmtAP::NotificationInfoSta");
+        @signal[NF_L2_AP_ASSOCIATED](type="ieee80211::DfraMgmtAP::NotificationInfoSta");
+        @signal[NF_L2_AP_DISASSOCIATED](type="ieee80211::DfraMgmtAP::NotificationInfoSta");
         
         @class(ieee80211::DfraMgmtAP);
+        @class(ieee80211::DfraMgmtAP::NotificationInfoSta);
     gates:
         input upperLayerIn; // from ~IMACRelayUnit; can be left unconnected
         output upperLayerOut; // to ~IMACRelayUnit; can be left unconnected
