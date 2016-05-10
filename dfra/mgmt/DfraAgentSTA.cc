@@ -25,8 +25,6 @@ namespace inet {
 
 namespace ieee80211 {
 
-//namespace dfra {
-
 Define_Module(DfraAgentSTA);
 
 #define MK_STARTUP    1
@@ -38,7 +36,7 @@ simsignal_t DfraAgentSTA::dropConfirmSignal = registerSignal("dropConfirm");
 void DfraAgentSTA::initialize(int stage)
 {
     cSimpleModule::initialize(stage);
-    EV << "agent init!" ;
+
     if (stage == INITSTAGE_LOCAL) {
         // read parameters
         activeScan = par("activeScan");
@@ -331,8 +329,6 @@ void DfraAgentSTA::processReassociateConfirm(Ieee80211Prim_ReassociateConfirm *r
         // we are happy!
     }
 }
-
-//} // namespace dfra
 
 } // namespace ieee80211
 

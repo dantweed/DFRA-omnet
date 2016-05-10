@@ -43,7 +43,7 @@ simple DfraMgmtAP like IIeee80211Mgmt
 {
     parameters:
         string ssid = default("SSID");
-        double beaconInterval @unit("s") = default(100ms);
+        double beaconInterval @unit("s") = default(102.4ms);
         int numAuthSteps = default(4); // use 2 for Open System auth, 4 for WEP
         string encapDecap = default("eth") @enum("true", "false", "eth");   // if "eth", frames sent up are converted to EthernetIIFrame
         //dataRate: numeric; XXX TBD
