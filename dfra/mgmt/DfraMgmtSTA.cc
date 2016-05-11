@@ -727,7 +727,7 @@ void DfraMgmtSTA::handleAssociationResponseFrame(Ieee80211AssociationResponseFra
     // extract frame contents
     MACAddress address = frame->getTransmitterAddress();
     int statusCode = frame->getBody().getStatusCode();
-    //XXX short aid;
+    short aid = frame->getBody().getAid();
     //XXX Ieee80211SupportedRatesElement supportedRates;
     delete frame;
 
@@ -756,9 +756,10 @@ void DfraMgmtSTA::handleAssociationResponseFrame(Ieee80211AssociationResponseFra
         // change our state to "associated"
         isAssociated = true;
         (APInfo&)assocAP = (*ap);
-
+        ap->AID = aid;
         emit(NF_L2_ASSOCIATED, myIface);
 
+        getContainingNode(this)->bubble("Associated with AP");
         assocAP.beaconTimeoutMsg = new cMessage("beaconTimeout", MK_BEACON_TIMEOUT);
         scheduleAt(simTime() + MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
     }

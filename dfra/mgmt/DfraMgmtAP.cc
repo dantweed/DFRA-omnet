@@ -63,6 +63,7 @@ void DfraMgmtAP::initialize(int stage)
         if (numAuthSteps != 2 && numAuthSteps != 4)
             throw cRuntimeError("parameter 'numAuthSteps' (number of frames exchanged during authentication) must be 2 or 4, not %d", numAuthSteps);
         channelNumber = -1;    // value will arrive from physical layer in receiveChangeNotification()
+        nextAID = 1;
         WATCH(ssid);
         WATCH(channelNumber);
         WATCH(beaconInterval);
@@ -201,6 +202,25 @@ void DfraMgmtAP::handleDataFrame(Ieee80211DataFrame *frame)
     }
 }
 
+
+//Find lowest AID which can be assigned, if already at max # of associations, indicate with -1
+int DfraMgmtAP::getLowestUnusedAID()
+{
+    int retVal;
+    std::multiset<int>::iterator it;
+
+    if (recycledAIDs.empty())
+        retVal =  nextAID++;
+    else {
+        it = recycledAIDs.begin();
+        retVal = *it;
+        recycledAIDs.erase(it);
+    }
+    if (retVal > MAXAID) retVal = -1;
+
+    return retVal;
+}
+
 void DfraMgmtAP::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
 {
     int frameAuthSeq = frame->getBody().getSequenceNumber();
@@ -214,6 +234,7 @@ void DfraMgmtAP::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
         sta->address = staAddress;
         sta->status = NOT_AUTHENTICATED;
         sta->authSeqExpected = 1;
+        sta->AID = getLowestUnusedAID();
     }
 
     // reset authentication status, when starting a new auth sequence
@@ -231,11 +252,12 @@ void DfraMgmtAP::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
     }
 
     // check authentication sequence number is OK
-    if (frameAuthSeq != sta->authSeqExpected) {
+    //ADDED: Check if AID is available
+    if (frameAuthSeq != sta->authSeqExpected || sta->AID == -1) {
         // wrong sequence number: send error and return
         EV << "Wrong sequence number, " << sta->authSeqExpected << " expected\n";
         Ieee80211AuthenticationFrame *resp = new Ieee80211AuthenticationFrame("Auth-ERROR");
-        resp->getBody().setStatusCode(SC_AUTH_OUT_OF_SEQ);
+        resp->getBody().setStatusCode(SC_AUTH_OUT_OF_SEQ); //TODO: correctly deal with no AID available
         sendManagementFrame(resp, frame->getTransmitterAddress());
         delete frame;
         sta->authSeqExpected = 1;    // go back to start square
@@ -278,11 +300,15 @@ void DfraMgmtAP::handleDeauthenticationFrame(Ieee80211DeauthenticationFrame *fra
     delete frame;
 
     if (sta) {
-        // mark STA as not authenticated; alternatively, it could also be removed from staList
+        //XXX mark STA as not authenticated;!!!!alternatively, it could also be removed from staList!!!
         if (sta->status == ASSOCIATED)
             sendDisAssocNotification(sta->address);
-        sta->status = NOT_AUTHENTICATED;
-        sta->authSeqExpected = 1;
+//        sta->status = NOT_AUTHENTICATED;
+//        sta->authSeqExpected = 1;
+        recycledAIDs.insert(sta->AID);
+
+        //delete station from list
+        staList.erase(staList.find(sta->address));
     }
 }
 
@@ -312,7 +338,8 @@ void DfraMgmtAP::handleAssociationRequestFrame(Ieee80211AssociationRequestFrame 
     Ieee80211AssociationResponseFrame *resp = new Ieee80211AssociationResponseFrame("AssocResp-OK");
     Ieee80211AssociationResponseFrameBody& body = resp->getBody();
     body.setStatusCode(SC_SUCCESSFUL);
-    body.setAid(0);    //XXX
+
+    body.setAid(sta->AID);    //XXX Added functions to create and manage AIDs
     body.setSupportedRates(supportedRates);
     sendManagementFrame(resp, sta->address);
 }
@@ -346,7 +373,7 @@ void DfraMgmtAP::handleReassociationRequestFrame(Ieee80211ReassociationRequestFr
     Ieee80211ReassociationResponseFrame *resp = new Ieee80211ReassociationResponseFrame("ReassocResp-OK");
     Ieee80211ReassociationResponseFrameBody& body = resp->getBody();
     body.setStatusCode(SC_SUCCESSFUL);
-    body.setAid(0);    //XXX
+    body.setAid(sta->AID);    //XXX Added functions to manage AIDS
     body.setSupportedRates(supportedRates);
     sendManagementFrame(resp, sta->address);
 }
@@ -427,6 +454,7 @@ void DfraMgmtAP::stop()
 {
     cancelEvent(beaconTimer);
     staList.clear();
+    recycledAIDs.clear();
     Ieee80211MgmtAPBase::stop();
 }
 

@@ -68,7 +68,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
         Ieee80211SupportedRatesElement supportedRates;
         simtime_t beaconInterval;
         double rxPower;
-
+        int AID; //ADDED
         bool isAuthenticated;
         int authSeqExpected;    // valid while authenticating; values: 1,3,5...
         cMessage *authTimeoutMsg;    // if non-nullptr: authentication is in progress

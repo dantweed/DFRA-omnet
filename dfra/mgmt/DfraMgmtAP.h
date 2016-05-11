@@ -19,6 +19,7 @@
 #define __DFRAMGMTAP_H
 
 #include <map>
+#include <vector>
 
 #include "inet/common/INETDefs.h"
 
@@ -47,6 +48,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     {
         MACAddress address;
         STAStatus status;
+        int AID;
         int authSeqExpected;    // when NOT_AUTHENTICATED: transaction sequence number of next expected auth frame
         //int consecFailedTrans;  //XXX
         //double expiry;          //XXX association should expire after a while if STA is silent?
@@ -78,6 +80,10 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     int numAuthSteps = 0;
     Ieee80211SupportedRatesElement supportedRates;
 
+    //ADDED: AID control
+    int nextAID;
+    std::multiset<int> recycledAIDs;
+    const int MAXAID = 2007;
     // state
     STAList staList;    ///< list of STAs
     cMessage *beaconTimer = nullptr;
@@ -137,6 +143,8 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     virtual void start() override;
     virtual void stop() override;
     //@}
+  private:
+    int getLowestUnusedAID(); //Added
 };
 
 //} // namespace dfra

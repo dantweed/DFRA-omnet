@@ -303,7 +303,7 @@ void DfraAgentSTA::processAssociateConfirm(Ieee80211Prim_AssociateConfirm *resp)
         EV << "Association successful\n";
         emit(acceptConfirmSignal, PR_ASSOCIATE_CONFIRM);
         // we are happy!
-        getContainingNode(this)->bubble("Associated with AP");
+        getContainingNode(this)->bubble("associated with AP");
         if (prevAP.isUnspecified() || prevAP != resp->getAddress()) {
             emit(NF_L2_ASSOCIATED_NEWAP, myIface);    //XXX detail: InterfaceEntry?
             prevAP = resp->getAddress();
