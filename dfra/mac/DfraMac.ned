@@ -100,7 +100,7 @@ module DfraMac extends MACProtocolBase like IIeee80211Mac
         string rxModule = ".rx";
         string txModule = ".tx";
         string firstContentionModule = ".ctn[0]";
-        int numContention = default(4);
+        int numContention = default(1);
         string collisionControllerModule = ".ctrl";
         string rateSelectionModule = ".rateSelection";
         string rateControlModule = ".rateControl";

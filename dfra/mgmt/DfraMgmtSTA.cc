@@ -671,10 +671,12 @@ void DfraMgmtSTA::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
         ap->authSeqExpected += 2;
     }
     else {
+/*
         if (statusCode == SC_SUCCESSFUL)
             EV << "Authentication successful\n";
         else
             EV << "Authentication failed\n";
+*/
 
         // authentication completed
         ap->isAuthenticated = (statusCode == SC_SUCCESSFUL);

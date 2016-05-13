@@ -246,13 +246,13 @@ void DfraAgentSTA::dumpAPList(Ieee80211Prim_ScanConfirm *resp)
     EV << "Received AP list:\n";
     for (int i = 0; i < (int)resp->getBssListArraySize(); i++) {
         Ieee80211Prim_BSSDescription& bssDesc = resp->getBssList(i);
-        EV << "    " << i << ". "
+/*        EV << "    " << i << ". "
            << " address=" << bssDesc.getBSSID()
            << " channel=" << bssDesc.getChannelNumber()
            << " SSID=" << bssDesc.getSSID()
            << " beaconIntvl=" << bssDesc.getBeaconInterval()
            << " rxPower=" << bssDesc.getRxPower()
-           << endl;
+           << endl;*/
         // later: supportedRates
     }
 }
