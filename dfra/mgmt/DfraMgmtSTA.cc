@@ -30,8 +30,6 @@ namespace inet {
 
 namespace ieee80211 {
 
-//namespace dfra {
-
 using namespace physicallayer;
 
 //TBD supportedRates!
@@ -855,8 +853,6 @@ void DfraMgmtSTA::storeAPInfo(const MACAddress& address, const Ieee80211BeaconFr
     //XXX where to get this from?
     //ap->rxPower = ...
 }
-
-//} // namespace dfra
 
 } // namespace ieee80211
 

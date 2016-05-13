@@ -44,7 +44,8 @@ OBJS = \
     $O/dfra/mac/DfraUpperMac.o \
     $O/dfra/mgmt/DfraAgentSTA.o \
     $O/dfra/mgmt/DfraMgmtAP.o \
-    $O/dfra/mgmt/DfraMgmtSTA.o
+    $O/dfra/mgmt/DfraMgmtSTA.o \
+    $O/dfra/mgmt/DFRAMgmtFrames.o
 
 # Message files
 MSGFILES =
@@ -389,6 +390,16 @@ $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211Channel.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
+$O/dfra/mgmt/DFRAMgmtFrames.o: dfra/mgmt/DFRAMgmtFrames.cc \
+	dfra/mgmt/DFRAMgmtFrames.h \
+	$(INET_PROJ)/src/inet/common/Compat.h \
+	$(INET_PROJ)/src/inet/common/INETDefs.h \
+	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/features.h \
+	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
+	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mgmt/Ieee80211MgmtFrames_m.h
 $O/dfra/mgmt/DfraAgentSTA.o: dfra/mgmt/DfraAgentSTA.cc \
 	dfra/mgmt/DfraAgentSTA.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
