@@ -23,6 +23,7 @@ INCLUDE_PATH = \
     -Idfra/mac \
     -Idfra/mgmt \
     -Idfra/node \
+    -Idfra/sink \
     -Iresults
 
 # Additional object and library files to link with
@@ -45,7 +46,8 @@ OBJS = \
     $O/dfra/mgmt/DfraAgentSTA.o \
     $O/dfra/mgmt/DfraMgmtAP.o \
     $O/dfra/mgmt/DfraMgmtSTA.o \
-    $O/dfra/mgmt/DFRAMgmtFrames.o
+    $O/dfra/mgmt/DFRAMgmtFrames.o \
+    $O/dfra/sink/UDPThrSink.o
 
 # Message files
 MSGFILES =
@@ -139,6 +141,7 @@ clean:
 	$(Q)-rm -f dfra/mac/*_m.cc dfra/mac/*_m.h dfra/mac/*_sm.cc dfra/mac/*_sm.h
 	$(Q)-rm -f dfra/mgmt/*_m.cc dfra/mgmt/*_m.h dfra/mgmt/*_sm.cc dfra/mgmt/*_sm.h
 	$(Q)-rm -f dfra/node/*_m.cc dfra/node/*_m.h dfra/node/*_sm.cc dfra/node/*_sm.h
+	$(Q)-rm -f dfra/sink/*_m.cc dfra/sink/*_m.h dfra/sink/*_sm.cc dfra/sink/*_sm.h
 	$(Q)-rm -f results/*_m.cc results/*_m.h results/*_sm.cc results/*_sm.h
 
 cleanall: clean
@@ -146,7 +149,7 @@ cleanall: clean
 
 depend:
 	$(qecho) Creating dependencies...
-	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/node/*.cc results/*.cc
+	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/node/*.cc dfra/sink/*.cc results/*.cc
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 $O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \
@@ -600,4 +603,32 @@ $O/dfra/mgmt/DfraMgmtSTA.o: dfra/mgmt/DfraMgmtSTA.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211Channel.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
+$O/dfra/sink/UDPThrSink.o: dfra/sink/UDPThrSink.cc \
+	dfra/sink/UDPThrSink.h \
+	$(INET_PROJ)/src/inet/applications/base/ApplicationBase.h \
+	$(INET_PROJ)/src/inet/common/Compat.h \
+	$(INET_PROJ)/src/inet/common/INETDefs.h \
+	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/common/ModuleAccess.h \
+	$(INET_PROJ)/src/inet/common/NotifierConsts.h \
+	$(INET_PROJ)/src/inet/common/lifecycle/ILifecycle.h \
+	$(INET_PROJ)/src/inet/common/lifecycle/LifecycleOperation.h \
+	$(INET_PROJ)/src/inet/common/lifecycle/NodeOperations.h \
+	$(INET_PROJ)/src/inet/common/lifecycle/OperationalBase.h \
+	$(INET_PROJ)/src/inet/features.h \
+	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
+	$(INET_PROJ)/src/inet/networklayer/common/InterfaceEntry.h \
+	$(INET_PROJ)/src/inet/networklayer/common/InterfaceToken.h \
+	$(INET_PROJ)/src/inet/networklayer/common/L3Address.h \
+	$(INET_PROJ)/src/inet/networklayer/common/L3AddressResolver.h \
+	$(INET_PROJ)/src/inet/networklayer/common/ModuleIdAddress.h \
+	$(INET_PROJ)/src/inet/networklayer/common/ModulePathAddress.h \
+	$(INET_PROJ)/src/inet/networklayer/contract/IInterfaceTable.h \
+	$(INET_PROJ)/src/inet/networklayer/contract/IRoute.h \
+	$(INET_PROJ)/src/inet/networklayer/contract/IRoutingTable.h \
+	$(INET_PROJ)/src/inet/networklayer/contract/ipv4/IPv4Address.h \
+	$(INET_PROJ)/src/inet/networklayer/contract/ipv6/IPv6Address.h \
+	$(INET_PROJ)/src/inet/transportlayer/contract/udp/UDPControlInfo.h \
+	$(INET_PROJ)/src/inet/transportlayer/contract/udp/UDPControlInfo_m.h \
+	$(INET_PROJ)/src/inet/transportlayer/contract/udp/UDPSocket.h
 
