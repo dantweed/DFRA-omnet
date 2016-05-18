@@ -26,6 +26,7 @@ class INET_API UDPThrSink : public ApplicationBase
     cMessage *selfMsg = nullptr;
 
     int numReceived = 0;
+    uint64_t bits = 0;
     std::map<L3Address,uint64_t> stats;
     static simsignal_t rcvdPkSignal;
 

@@ -73,8 +73,11 @@ void UDPThrSink::finish()
     ApplicationBase::finish();
     EV_INFO << "SINK STATS\n";
     EV_INFO << getFullPath() << ": received " << numReceived << " packets\n";
+    EV_INFO << getFullPath() << ": received " << bits << " bits\n";
+    EV_INFO << getFullPath() << ": Total Throughput:  " << bits/(simTime() - startTime) << " bps\n";
+    EV_INFO << getFullPath() << ": Per station throughput:\n ";
     for (std::map<L3Address,uint64_t>::iterator it = stats.begin(); it  != stats.end(); it++) {
-        EV_INFO << it->first << " => " << it->second << "bits\t\n";
+        EV_INFO << it->first << " => " << it->second/(simTime() - startTime) << "bps\t\n";
     }
 }
 
@@ -121,10 +124,12 @@ void UDPThrSink::processPacket(cPacket *pk)
     //DT
     //EV_INFO << "Received packet: " << UDPSocket::getReceivedPacketInfo(pk) << endl;
     UDPDataIndication *ctrl = check_and_cast<UDPDataIndication *>(pk->getControlInfo());
-    auto ret = stats.insert( std::pair<L3Address,uint64_t>( ctrl->getSrcAddr(),pk->getBitLength()) );
+    uint64_t currBits = pk->getBitLength();
+    bits += currBits;
+    auto ret = stats.insert( std::pair<L3Address,uint64_t>( ctrl->getSrcAddr(),currBits) );
 
     if ( ! ret.second ) {
-        (stats.find(ctrl->getSrcAddr()))->second += pk->getBitLength();
+        (stats.find(ctrl->getSrcAddr()))->second += currBits;
     }
 
     emit(rcvdPkSignal, pk);
