@@ -32,6 +32,7 @@ import inet.power.contract.IEnergyStorage;
 import inet.power.contract.IEnergyGenerator;
 import inet.node.inet.INetworkNode;
 
+import inet.common.misc.ThruputMeteringChannel;
 //
 // Contains the common lower layers (linklayer and networklayer)
 // of Router, StandardHost, WirelessHost etc.
@@ -125,7 +126,7 @@ module DfraNodeBase like INetworkNode
         }
         tun[numTunInterfaces]: <default("TunInterface")> like ITunNic {
             parameters:
-                @display("p=213,406,row,10;q=txQueue;i=block/ifcard");
+                @display("p=222,396,row,10;q=txQueue;i=block/ifcard");
         }
 
     connections allowunconnected:
@@ -135,14 +136,14 @@ module DfraNodeBase like INetworkNode
 
         for i=0..sizeof(radioIn)-1 {
             radioIn[i] --> { @display("m=s"); } --> wlan[i].radioIn;
-            wlan[i].upperLayerOut --> networkLayer.ifIn++;
-            wlan[i].upperLayerIn <-- networkLayer.ifOut++;
+            wlan[i].upperLayerOut -->  networkLayer.ifIn++;
+            wlan[i].upperLayerIn  <-- networkLayer.ifOut++;
         }
 
         for i=0..sizeof(ethg)-1 {
             ethg[i] <--> { @display("m=s"); } <--> eth[i].phys;
-            eth[i].upperLayerOut --> networkLayer.ifIn++;
-            eth[i].upperLayerIn <-- networkLayer.ifOut++;
+            eth[i].upperLayerOut --> ThruputMeteringChannel --> networkLayer.ifIn++;
+            eth[i].upperLayerIn <-- ThruputMeteringChannel <-- networkLayer.ifOut++;
         }
 
         for i=0..sizeof(pppg)-1 {
