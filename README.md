@@ -1,12 +1,6 @@
 # DFRA-omnet
 DFRA-omnet  OMNet++ Source code for DFRA simulations
 
-Branch: basic
-includes necessary files which need to be modified for implemenet
-DFRA
+dev branch based on basic to allow breaking the models/sims without worry
+working changes should be moved into appropriate traffic monitoring branch
 
-functional up to layer 4 (traffic generation) with UDP/TCP traffic and 
-throughput measured through metered channels between several of the modules 
-in the network.  
-
-Aggregate max throughput appears to be consistent with theoretical maximums
