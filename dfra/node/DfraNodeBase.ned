@@ -32,7 +32,6 @@ import inet.power.contract.IEnergyStorage;
 import inet.power.contract.IEnergyGenerator;
 import inet.node.inet.INetworkNode;
 
-import inet.common.misc.ThruputMeteringChannel;
 //
 // Contains the common lower layers (linklayer and networklayer)
 // of Router, StandardHost, WirelessHost etc.
@@ -142,8 +141,8 @@ module DfraNodeBase like INetworkNode
 
         for i=0..sizeof(ethg)-1 {
             ethg[i] <--> { @display("m=s"); } <--> eth[i].phys;
-            eth[i].upperLayerOut --> ThruputMeteringChannel --> networkLayer.ifIn++;
-            eth[i].upperLayerIn <-- ThruputMeteringChannel <-- networkLayer.ifOut++;
+            eth[i].upperLayerOut -->  networkLayer.ifIn++;
+            eth[i].upperLayerIn <--  networkLayer.ifOut++;
         }
 
         for i=0..sizeof(pppg)-1 {

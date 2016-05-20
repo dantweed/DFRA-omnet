@@ -22,6 +22,7 @@ INCLUDE_PATH = \
     -Idfra \
     -Idfra/mac \
     -Idfra/mgmt \
+    -Idfra/misc \
     -Idfra/node \
     -Idfra/sink \
     -Iresults
@@ -47,6 +48,7 @@ OBJS = \
     $O/dfra/mgmt/DfraMgmtAP.o \
     $O/dfra/mgmt/DfraMgmtSTA.o \
     $O/dfra/mgmt/DFRAMgmtFrames.o \
+    $O/dfra/misc/MeteredChannel.o \
     $O/dfra/sink/UDPThrSink.o
 
 # Message files
@@ -140,6 +142,7 @@ clean:
 	$(Q)-rm -f dfra/*_m.cc dfra/*_m.h dfra/*_sm.cc dfra/*_sm.h
 	$(Q)-rm -f dfra/mac/*_m.cc dfra/mac/*_m.h dfra/mac/*_sm.cc dfra/mac/*_sm.h
 	$(Q)-rm -f dfra/mgmt/*_m.cc dfra/mgmt/*_m.h dfra/mgmt/*_sm.cc dfra/mgmt/*_sm.h
+	$(Q)-rm -f dfra/misc/*_m.cc dfra/misc/*_m.h dfra/misc/*_sm.cc dfra/misc/*_sm.h
 	$(Q)-rm -f dfra/node/*_m.cc dfra/node/*_m.h dfra/node/*_sm.cc dfra/node/*_sm.h
 	$(Q)-rm -f dfra/sink/*_m.cc dfra/sink/*_m.h dfra/sink/*_sm.cc dfra/sink/*_sm.h
 	$(Q)-rm -f results/*_m.cc results/*_m.h results/*_sm.cc results/*_sm.h
@@ -149,7 +152,7 @@ cleanall: clean
 
 depend:
 	$(qecho) Creating dependencies...
-	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/node/*.cc dfra/sink/*.cc results/*.cc
+	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/misc/*.cc dfra/node/*.cc dfra/sink/*.cc results/*.cc
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 $O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \
@@ -603,6 +606,12 @@ $O/dfra/mgmt/DfraMgmtSTA.o: dfra/mgmt/DfraMgmtSTA.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211Channel.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
+$O/dfra/misc/MeteredChannel.o: dfra/misc/MeteredChannel.cc \
+	dfra/misc/MeteredChannel.h \
+	$(INET_PROJ)/src/inet/common/Compat.h \
+	$(INET_PROJ)/src/inet/common/INETDefs.h \
+	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/features.h
 $O/dfra/sink/UDPThrSink.o: dfra/sink/UDPThrSink.cc \
 	dfra/sink/UDPThrSink.h \
 	$(INET_PROJ)/src/inet/applications/base/ApplicationBase.h \

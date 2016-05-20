@@ -9,7 +9,7 @@ import dfra.dfra.mgmt.DfraAgentSTA;
 
 import inet.physicallayer.contract.packetlevel.IRadio;
 
-import inet.common.misc.ThruputMeteringChannel;
+import dfra.dfra.misc.MeteredChannel;
 
 //
 // This NIC implements an 802.11 network interface card.
@@ -65,8 +65,8 @@ module DfraNic like IWirelessNic
         }
     connections:
         radioIn --> { @display("m=s"); } --> radio.radioIn;
-        radio.upperLayerIn <-- ThruputMeteringChannel <-- mac.lowerLayerOut;
-        radio.upperLayerOut --> ThruputMeteringChannel --> mac.lowerLayerIn;
+        radio.upperLayerIn <-- MeteredChannel <-- mac.lowerLayerOut;
+        radio.upperLayerOut --> MeteredChannel --> mac.lowerLayerIn;
 
         mac.upperLayerOut --> mgmt.macIn;
         mac.upperLayerIn <-- mgmt.macOut;
