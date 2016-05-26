@@ -20,7 +20,7 @@
 #ifndef __DFRAEDCAUPPERMAC_H
 #define __DFRAEDCAUPPERMAC_H
 
-#include "IUpperMac.h"
+#include "inet/linklayer/ieee80211/mac/IUpperMac.h"
 #include "IFrameExchange.h"
 #include "AccessCategory.h"
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"

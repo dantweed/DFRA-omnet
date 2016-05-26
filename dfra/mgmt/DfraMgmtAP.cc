@@ -201,6 +201,23 @@ void DfraMgmtAP::handleDataFrame(Ieee80211DataFrame *frame)
     }
 }
 
+//Find lowest AID which can be assigned, if already at max # of associations, indicate with -1
+int DfraMgmtAP::getLowestUnusedAID()
+{
+    int retVal;
+
+    if (recycledAIDs.empty())
+        retVal =  nextAID++;
+    else {
+        std::multiset<int>::iterator it = recycledAIDs.begin();
+        retVal = *it;
+        recycledAIDs.erase(it);
+    }
+    if (retVal > MAXAID) retVal = -1;
+
+    return retVal;
+}
+
 void DfraMgmtAP::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
 {
     int frameAuthSeq = frame->getBody().getSequenceNumber();
@@ -250,6 +267,7 @@ void DfraMgmtAP::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
     EV << "Sending Authentication frame, seqNum=" << (frameAuthSeq + 1) << "\n";
     Ieee80211AuthenticationFrame *resp = new Ieee80211AuthenticationFrame(isLast ? "Auth-OK" : "Auth");
     resp->getBody().setSequenceNumber(frameAuthSeq + 1);
+    resp->setAID(sta->AID);
     resp->getBody().setStatusCode(SC_SUCCESSFUL);
     resp->getBody().setIsLast(isLast);
     // XXX frame length could be increased to account for challenge text length etc.
@@ -302,7 +320,7 @@ void DfraMgmtAP::handleAssociationRequestFrame(Ieee80211AssociationRequestFrame 
     }
 
     delete frame;
-
+    EV << "Processing AssociationRequest frame for station AID " << + sta->AID << "\n";
     // mark STA as associated
     if (sta->status != ASSOCIATED)
         sendAssocNotification(sta->address);
@@ -312,7 +330,8 @@ void DfraMgmtAP::handleAssociationRequestFrame(Ieee80211AssociationRequestFrame 
     Ieee80211AssociationResponseFrame *resp = new Ieee80211AssociationResponseFrame("AssocResp-OK");
     Ieee80211AssociationResponseFrameBody& body = resp->getBody();
     body.setStatusCode(SC_SUCCESSFUL);
-    body.setAid(0);    //XXX
+    resp->setAID(sta->AID);
+    body.setAid(sta->AID);    //XXX Added functions to create and manage AIDs
     body.setSupportedRates(supportedRates);
     sendManagementFrame(resp, sta->address);
 }
@@ -346,7 +365,9 @@ void DfraMgmtAP::handleReassociationRequestFrame(Ieee80211ReassociationRequestFr
     Ieee80211ReassociationResponseFrame *resp = new Ieee80211ReassociationResponseFrame("ReassocResp-OK");
     Ieee80211ReassociationResponseFrameBody& body = resp->getBody();
     body.setStatusCode(SC_SUCCESSFUL);
-    body.setAid(0);    //XXX
+    body.setAid(sta->AID);    //XXX Added functions to manage AIDS
+    resp->setAID(sta->AID);
+
     body.setSupportedRates(supportedRates);
     sendManagementFrame(resp, sta->address);
 }

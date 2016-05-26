@@ -89,9 +89,10 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     struct AssociatedAPInfo : public APInfo
     {
         int receiveSequence;
+        int aid;
         cMessage *beaconTimeoutMsg;
 
-        AssociatedAPInfo() : APInfo() { receiveSequence = 0; beaconTimeoutMsg = nullptr; }
+        AssociatedAPInfo() : APInfo() { receiveSequence = 0; beaconTimeoutMsg = nullptr; aid = -1;}
     };
 
   protected:
