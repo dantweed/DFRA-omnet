@@ -220,7 +220,7 @@ Ieee80211DataFrame *DfraMgmtSTA::encapsulate(cPacket *msg)
 
     // receiver is the AP
     frame->setReceiverAddress(assocAP.address);
-
+    frame->setAID(assocAP.aid);  //DT: adding AID to all frames
     // destination address is in address3
     Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl *>(msg->removeControlInfo());
     frame->setAddress3(ctrl->getDest());
