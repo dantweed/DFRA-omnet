@@ -68,7 +68,6 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
         Ieee80211SupportedRatesElement supportedRates;
         simtime_t beaconInterval;
         double rxPower;
-        int AID; //ADDED
         bool isAuthenticated;
         int authSeqExpected;    // valid while authenticating; values: 1,3,5...
         cMessage *authTimeoutMsg;    // if non-nullptr: authentication is in progress
@@ -89,9 +88,10 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     struct AssociatedAPInfo : public APInfo
     {
         int receiveSequence;
+        int aid;
         cMessage *beaconTimeoutMsg;
 
-        AssociatedAPInfo() : APInfo() { receiveSequence = 0; beaconTimeoutMsg = nullptr; }
+        AssociatedAPInfo() : APInfo() { receiveSequence = 0; beaconTimeoutMsg = nullptr; aid = -1;}
     };
 
   protected:

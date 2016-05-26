@@ -727,7 +727,8 @@ void DfraMgmtSTA::handleAssociationResponseFrame(Ieee80211AssociationResponseFra
     // extract frame contents
     MACAddress address = frame->getTransmitterAddress();
     int statusCode = frame->getBody().getStatusCode();
-    short aid = frame->getBody().getAid();
+    short aid = frame->getAID();
+
     //XXX Ieee80211SupportedRatesElement supportedRates;
     delete frame;
 
@@ -751,12 +752,13 @@ void DfraMgmtSTA::handleAssociationResponseFrame(Ieee80211AssociationResponseFra
         EV << "Association failed with AP address=" << ap->address << "\n";
     }
     else {
-        EV << "Association successful, AP address=" << ap->address << "\n";
+        EV << "Association successful, AP address=" << ap->address << " AID=" << aid <<"\n";
 
         // change our state to "associated"
         isAssociated = true;
         (APInfo&)assocAP = (*ap);
-        ap->AID = aid;
+        assocAP.aid = aid;
+
         emit(NF_L2_ASSOCIATED, myIface);
 
         getContainingNode(this)->bubble("Associated with AP");
