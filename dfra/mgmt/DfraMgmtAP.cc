@@ -207,12 +207,11 @@ void DfraMgmtAP::handleDataFrame(Ieee80211DataFrame *frame)
 int DfraMgmtAP::getLowestUnusedAID()
 {
     int retVal;
-    std::multiset<int>::iterator it;
 
     if (recycledAIDs.empty())
         retVal =  nextAID++;
     else {
-        it = recycledAIDs.begin();
+        std::multiset<int>::iterator it = recycledAIDs.begin();
         retVal = *it;
         recycledAIDs.erase(it);
     }
@@ -272,6 +271,7 @@ void DfraMgmtAP::handleAuthenticationFrame(Ieee80211AuthenticationFrame *frame)
     EV << "Sending Authentication frame, seqNum=" << (frameAuthSeq + 1) << "\n";
     Ieee80211AuthenticationFrame *resp = new Ieee80211AuthenticationFrame(isLast ? "Auth-OK" : "Auth");
     resp->getBody().setSequenceNumber(frameAuthSeq + 1);
+    resp->setAID(sta->AID);
     resp->getBody().setStatusCode(SC_SUCCESSFUL);
     resp->getBody().setIsLast(isLast);
     // XXX frame length could be increased to account for challenge text length etc.
@@ -328,7 +328,7 @@ void DfraMgmtAP::handleAssociationRequestFrame(Ieee80211AssociationRequestFrame 
     }
 
     delete frame;
-
+    EV << "Processing AssociationRequest frame for station AID " << + sta->AID << "\n";
     // mark STA as associated
     if (sta->status != ASSOCIATED)
         sendAssocNotification(sta->address);
@@ -338,7 +338,7 @@ void DfraMgmtAP::handleAssociationRequestFrame(Ieee80211AssociationRequestFrame 
     Ieee80211AssociationResponseFrame *resp = new Ieee80211AssociationResponseFrame("AssocResp-OK");
     Ieee80211AssociationResponseFrameBody& body = resp->getBody();
     body.setStatusCode(SC_SUCCESSFUL);
-
+    resp->setAID(sta->AID);
     body.setAid(sta->AID);    //XXX Added functions to create and manage AIDs
     body.setSupportedRates(supportedRates);
     sendManagementFrame(resp, sta->address);
@@ -374,6 +374,7 @@ void DfraMgmtAP::handleReassociationRequestFrame(Ieee80211ReassociationRequestFr
     Ieee80211ReassociationResponseFrameBody& body = resp->getBody();
     body.setStatusCode(SC_SUCCESSFUL);
     body.setAid(sta->AID);    //XXX Added functions to manage AIDS
+    resp->setAID(sta->AID);
     body.setSupportedRates(supportedRates);
     sendManagementFrame(resp, sta->address);
 }
