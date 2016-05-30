@@ -818,7 +818,7 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
         //APInfo *ap = lookupAP(frame->getTransmitterAddress());
         //ASSERT(ap!=nullptr);
     }
-
+    EV << "addedFields=" << *(int*)frame->getAddedFields();
     delete frame;
 }
 

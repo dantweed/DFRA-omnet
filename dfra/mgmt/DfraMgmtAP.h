@@ -20,6 +20,7 @@
 
 #include <map>
 #include <vector>
+#include <bitset>
 
 #include "inet/common/INETDefs.h"
 
@@ -72,6 +73,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     };
     typedef std::map<MACAddress, STAInfo, MAC_compare> STAList;
 
+
   protected:
     // configuration
     std::string ssid;
@@ -84,6 +86,11 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     int nextAID;
     std::multiset<int> recycledAIDs;
     const int MAXAID = 2007;
+
+    typedef std::bitset<8> BYTE;
+
+    BYTE *schedule = nullptr;
+
     // state
     STAList staList;    ///< list of STAs
     cMessage *beaconTimer = nullptr;
@@ -145,6 +152,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     //@}
   private:
     int getLowestUnusedAID(); //Added
+
 };
 
 //} // namespace dfra

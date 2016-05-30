@@ -142,6 +142,13 @@ void DfraMgmtAP::sendManagementFrame(Ieee80211ManagementFrame *frame, const MACA
 
 void DfraMgmtAP::sendBeacon()
 {
+    if (!schedule)
+        schedule = new BYTE[2];  // eventually will use this to build schedule, and add functions to rebuild byte array (and expand/shrink as needed)
+
+    schedule[0] = 0xff;
+    schedule[1] = 0x11;
+
+
     EV << "Sending beacon\n";
     Ieee80211BeaconFrame *frame = new Ieee80211BeaconFrame("Beacon");
     Ieee80211BeaconFrameBody& body = frame->getBody();
@@ -150,7 +157,7 @@ void DfraMgmtAP::sendBeacon()
     body.setBeaconInterval(beaconInterval);
     body.setChannelNumber(channelNumber);
     body.setBodyLength(8 + 2 + 2 + (2 + ssid.length()) + (2 + supportedRates.numRates));
-
+    frame->setAddedFields((void*)schedule);
     frame->setByteLength(28 + body.getBodyLength());
     frame->setReceiverAddress(MACAddress::BROADCAST_ADDRESS);
     frame->setFromDS(true);
@@ -457,6 +464,7 @@ void DfraMgmtAP::stop()
     staList.clear();
     recycledAIDs.clear();
     Ieee80211MgmtAPBase::stop();
+    delete schedule;
 }
 
 //} // namespace dfra
