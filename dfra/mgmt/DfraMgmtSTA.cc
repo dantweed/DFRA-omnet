@@ -819,7 +819,7 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
         std::string sched( reinterpret_cast<char const*>(schedule.staSchedules), schedule.numStations);
         mysched = (BYTE)schedule.staSchedules[assocAP.aid-1];
         EV << "Schedule = " << sched << "\n";
-        EV << "My schedule = "<< mysched << "\n";
+        EV << "My schedule = "<< (int)mysched << "\n";
         //APInfo *ap = lookupAP(frame->getTransmitterAddress());
         //ASSERT(ap!=nullptr);
     }
