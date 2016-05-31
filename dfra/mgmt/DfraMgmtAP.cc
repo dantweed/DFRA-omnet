@@ -142,11 +142,22 @@ void DfraMgmtAP::sendManagementFrame(Ieee80211ManagementFrame *frame, const MACA
 
 void DfraMgmtAP::sendBeacon()
 {
-    if (!schedule)
-        schedule = new BYTE[2];  // eventually will use this to build schedule, and add functions to rebuild byte array (and expand/shrink as needed)
 
-    schedule[0] = 0xff;
-    schedule[1] = 0x11;
+    //Build schedule (will eventually be done through an interface)
+    if (!schedule)
+        schedule = new Sched;
+
+    if (!staList.empty()) {
+        schedule->numStations = staList.size();
+        delete schedule->staSchedules;
+        schedule->staSchedules = new BYTE[schedule->numStations];
+        for (int i = 0; i < schedule->numStations; i++)
+            schedule->staSchedules[i] = (BYTE)((i+1) % 255);
+        schedule->frameTypes = 0xaa;
+
+    } else {
+        schedule->frameTypes = 0xff;
+    }
 
 
     EV << "Sending beacon\n";
