@@ -54,6 +54,17 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
         //double expiry;          //XXX association should expire after a while if STA is silent?
     };
 
+    //
+    // Stores DFRA scheduling info
+    //
+    using BYTE =  uint8;
+    struct Sched {
+        int numStations = 0;
+        BYTE frameTypes = 0;
+        BYTE *staSchedules = nullptr;
+    };
+
+
     class NotificationInfoSta : public cObject
     {
         MACAddress apAddress;
@@ -84,6 +95,10 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     int nextAID;
     std::multiset<int> recycledAIDs;
     const int MAXAID = 2007;
+
+    //ADDED: Schedule info
+    Sched *schedule;
+
     // state
     STAList staList;    ///< list of STAs
     cMessage *beaconTimer = nullptr;

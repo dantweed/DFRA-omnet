@@ -58,6 +58,16 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     };
 
     //
+    // Stores DFRA scheduling info
+    //
+    using BYTE =  uint8;
+    struct Sched {
+        int numStations;
+        BYTE frameTypes;
+        BYTE *staSchedules;
+    };
+
+    //
     // Stores AP info received during scanning
     //
     struct APInfo
@@ -115,6 +125,10 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     bool isAssociated;
     cMessage *assocTimeoutMsg;    // if non-nullptr: association is in progress
     AssociatedAPInfo assocAP;
+
+    //ADDED: Schedule info
+    BYTE framteTypes;
+    BYTE mysched;
 
   public:
     DfraMgmtSTA() : host(nullptr), interfaceTable(nullptr), myIface(nullptr), numChannels(-1), isScanning(false), isAssociated(false), assocTimeoutMsg(nullptr) {}

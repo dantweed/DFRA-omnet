@@ -142,6 +142,23 @@ void DfraMgmtAP::sendManagementFrame(Ieee80211ManagementFrame *frame, const MACA
 
 void DfraMgmtAP::sendBeacon()
 {
+
+    //Build schedule (will eventually be done through an interface)
+    if (!schedule)
+        schedule = new Sched;
+
+    if (!staList.empty()) {
+        schedule->numStations = staList.size();
+        delete schedule->staSchedules;
+        schedule->staSchedules = new BYTE[schedule->numStations];
+        for (int i = 0; i < schedule->numStations; i++)
+            schedule->staSchedules[i] = (BYTE)((i+1) % 255);
+        schedule->frameTypes = 0xaa;
+
+    } else {
+        schedule->frameTypes = 0xff;
+    }
+
     EV << "Sending beacon\n";
     Ieee80211BeaconFrame *frame = new Ieee80211BeaconFrame("Beacon");
     Ieee80211BeaconFrameBody& body = frame->getBody();
