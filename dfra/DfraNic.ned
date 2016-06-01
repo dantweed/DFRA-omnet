@@ -66,16 +66,16 @@ module DfraNic like IWirelessNic
     connections:
         radioIn --> { @display("m=s"); } --> radio.radioIn;
         radio.upperLayerIn <-- MeteredChannel <-- mac.lowerLayerOut;
-        radio.upperLayerOut --> MeteredChannel --> mac.lowerLayerIn;
+        radio.upperLayerOut  --> mac.lowerLayerIn;
 
-        mac.upperLayerOut --> MeteredChannel --> mgmt.macIn;
-        mac.upperLayerIn <-- MeteredChannel <-- mgmt.macOut;
+        mac.upperLayerOut --> mgmt.macIn;
+        mac.upperLayerIn  <-- mgmt.macOut;
 
         mgmt.agentOut --> agent.mgmtIn if _agentNeeded;
         mgmt.agentIn <-- agent.mgmtOut if _agentNeeded;
 
-        mgmt.upperLayerOut --> MeteredChannel { @display("m=n"); } --> upperLayerOut;
-        mgmt.upperLayerIn <-- MeteredChannel { @display("m=n"); } <-- upperLayerIn if classifierType == "";
+        mgmt.upperLayerOut  --> upperLayerOut;
+        mgmt.upperLayerIn  <-- upperLayerIn if classifierType == "";
         mgmt.upperLayerIn <-- { @display("m=n"); } <-- classifier.out if classifierType != "";
         classifier.in <-- { @display("m=n"); } <-- upperLayerIn if classifierType != "";
 }
