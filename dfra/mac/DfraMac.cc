@@ -66,7 +66,7 @@ void DfraMac::initialize(int stage)
         radioModule->subscribe(IRadio::receivedSignalPartChangedSignal, this);
         radio = check_and_cast<IRadio *>(radioModule);
 
-        upperMac = check_and_cast<IUpperMac *>(getModuleByPath(par("upperMacModule")));
+        upperMac = check_and_cast<DfraUpperMac *>(getModuleByPath(par("upperMacModule")));
         rx = check_and_cast<IRx *>(getModuleByPath(par("rxModule")));
         tx = check_and_cast<ITx *>(getModuleByPath(par("txModule")));
         collectContentionModules(getModuleByPath(par("firstContentionModule")), contention);
@@ -133,7 +133,8 @@ void DfraMac::handleSelfMessage(cMessage *msg)
 
 void DfraMac::handleUpperPacket(cPacket *msg)
 {
-    upperMac->upperFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame *>(msg));
+    upperMac->upperFrameReceived(msg);
+    //upperMac->upperFrameReceived(check_and_cast<Ieee80211DataOrMgmtFrame *>(msg));
 }
 
 void DfraMac::handleLowerPacket(cPacket *msg)

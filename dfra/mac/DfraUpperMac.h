@@ -93,6 +93,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         DfraUpperMac();
         virtual ~DfraUpperMac();
         virtual void upperFrameReceived(Ieee80211DataOrMgmtFrame *frame) override;
+        virtual void upperFrameReceived(cPacket *msg);
         virtual void lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void corruptedFrameReceived() override;
         virtual void channelAccessGranted(IContentionCallback *callback, int txIndex) override;

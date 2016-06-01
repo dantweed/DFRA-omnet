@@ -124,6 +124,33 @@ void DfraUpperMac::handleMessage(cMessage *msg)
         ASSERT(false);
 }
 
+void DfraUpperMac:: upperFrameReceived(cPacket *msg)
+{
+    Ieee80211DataOrMgmtFrame *frame = check_and_cast<Ieee80211DataOrMgmtFrame *>(msg);
+    Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
+        take(frame);
+
+        EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << endl;
+
+        if (maxQueueSize > 0 && transmissionQueue.length() >= maxQueueSize && dynamic_cast<Ieee80211DataFrame *>(frame)) {
+            EV << "Dataframe " << frame << " received from higher layer but MAC queue is full, dropping\n";
+            delete frame;
+            return;
+        }
+
+        ASSERT(!frame->getReceiverAddress().isUnspecified());
+        frame->setTransmitterAddress(params->getAddress());
+        duplicateDetection->assignSequenceNumber(frame);
+
+        if (frame->getByteLength() <= fragmentationThreshold)
+            enqueue(frame);
+        else {
+            auto fragments = fragmenter->fragment(frame, fragmentationThreshold);
+            for (Ieee80211DataOrMgmtFrame *fragment : fragments)
+                enqueue(fragment);
+        }
+}
+
 void DfraUpperMac::upperFrameReceived(Ieee80211DataOrMgmtFrame *frame)
 {
     Enter_Method("upperFrameReceived(\"%s\")", frame->getName());

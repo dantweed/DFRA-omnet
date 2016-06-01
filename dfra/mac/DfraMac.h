@@ -32,6 +32,8 @@
 #include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h" //TODO not needed here
 #include "IMacRadioInterface.h"
 
+#include <DfraUpperMac.h>
+
 namespace inet {
 namespace ieee80211 {
 
@@ -56,7 +58,7 @@ class INET_API DfraMac : public MACProtocolBase, public IMacRadioInterface
   protected:
     MACAddress address; // only because createInterfaceEntry() needs it
 
-    IUpperMac *upperMac = nullptr;
+    DfraUpperMac *upperMac = nullptr;
     IRx *rx = nullptr;
     ITx *tx = nullptr;
     IContention **contention = nullptr;  // nullptr-terminated pointer array

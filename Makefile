@@ -157,6 +157,7 @@ depend:
 $O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \
 	dfra/mac/DfraEdcaUpperMac.h \
 	dfra/mac/DfraMac.h \
+	dfra/mac/DfraUpperMac.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
 	$(INET_PROJ)/src/inet/common/DelayedInitializer.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
@@ -243,6 +244,7 @@ $O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
 $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
 	dfra/mac/DfraMac.h \
+	dfra/mac/DfraUpperMac.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
 	$(INET_PROJ)/src/inet/common/DelayedInitializer.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
@@ -266,7 +268,9 @@ $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
 	$(INET_PROJ)/src/inet/linklayer/base/MACProtocolBase.h \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacRadioInterface.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRx.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITx.h \
