@@ -62,6 +62,9 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
         int numStations = 0;
         BYTE frameTypes = 0;
         BYTE *staSchedules = nullptr;
+        int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);;
+        Sched(){}
+        ~Sched(){delete staSchedules;}
     };
 
 
@@ -151,7 +154,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     void sendAssocNotification(const MACAddress& addr);
 
     void sendDisAssocNotification(const MACAddress& addr);
-
+    void finish();
     /** lifecycle support */
     //@{
 

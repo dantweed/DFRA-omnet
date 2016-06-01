@@ -26,5 +26,5 @@ package dfra.dfra.misc;
 channel MeteredChannel extends ned.DatarateChannel
 {
     @class(MeteredChannel);
-    string thruputDisplayFormat = default("B");  // the format string for display on the link. Leave empty to disable display
+    string thruputDisplayFormat = default("b");  // the format string for display on the link. Leave empty to disable display
 }

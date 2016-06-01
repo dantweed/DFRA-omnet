@@ -151,8 +151,11 @@ void DfraMgmtAP::sendBeacon()
         schedule->numStations = staList.size();
         delete schedule->staSchedules;
         schedule->staSchedules = new BYTE[schedule->numStations];
-        for (int i = 0; i < schedule->numStations; i++)
+        int i = 0;
+        for (; i < schedule->numStations; i++) {
             schedule->staSchedules[i] = (BYTE)((i+1) % 255);
+        }
+        schedule->size = sizeof(int)+sizeof(BYTE)*(i+1);
         schedule->frameTypes = 0xaa;
 
     } else {
@@ -167,7 +170,9 @@ void DfraMgmtAP::sendBeacon()
     body.setSupportedRates(supportedRates);
     body.setBeaconInterval(beaconInterval);
     body.setChannelNumber(channelNumber);
-    body.setBodyLength(8 + 2 + 2 + (2 + ssid.length()) + (2 + supportedRates.numRates));
+
+    body.setBodyLength(8 + 2 + 2 + (2 + ssid.length()) + (2 + supportedRates.numRates)+ schedule->size);
+    frame->setAddedFields((void*)schedule);
 
     frame->setByteLength(28 + body.getBodyLength());
     frame->setReceiverAddress(MACAddress::BROADCAST_ADDRESS);
@@ -475,6 +480,11 @@ void DfraMgmtAP::stop()
     staList.clear();
     recycledAIDs.clear();
     Ieee80211MgmtAPBase::stop();
+}
+
+void DfraMgmtAP::finish()
+{
+    if (schedule) delete schedule;
 }
 
 //} // namespace dfra
