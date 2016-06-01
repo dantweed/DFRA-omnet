@@ -67,6 +67,12 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
         BYTE *staSchedules;
     };
 
+    struct SchedulingInfo {
+        BYTE frameTypes;
+        BYTE mysched;
+        int aid;
+    };
+
     //
     // Stores AP info received during scanning
     //
@@ -127,8 +133,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     AssociatedAPInfo assocAP;
 
     //ADDED: Schedule info
-    BYTE framteTypes;
-    BYTE mysched;
+    SchedulingInfo mySchedule;
 
   public:
     DfraMgmtSTA() : host(nullptr), interfaceTable(nullptr), myIface(nullptr), numChannels(-1), isScanning(false), isAssociated(false), assocTimeoutMsg(nullptr) {}

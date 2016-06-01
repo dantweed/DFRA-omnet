@@ -236,7 +236,7 @@ void DfraUpperMac::transmissionComplete(ITxCallback *callback)
 void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
 {
     ASSERT(!frameExchange);
-
+//FIXME: Control Tx, need to know which module we are in, and what our AID is (note AID = -1 tells us we are AP)
     if (utils->isBroadcastOrMulticast(frame))
         utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
     else

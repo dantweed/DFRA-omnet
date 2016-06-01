@@ -181,7 +181,7 @@ module Ieee80211CompatibleMac extends DfraMac
         int cwMaxData = default(-1); // contention window for normal data frames, -1 means default
         int cwMinMulticast = default(-1); // contention window for broadcast messages, -1 means default
 
-        upperMac.typename = EDCA ? "EdcaUpperMac" : "DcfUpperMac";
+        upperMac.typename = EDCA ? "DfraEdcaUpperMac" : "DfraUpperMac";
         numContention = EDCA ? 4 : 1;
 
         rateSelection.modeSet = opMode; // BasicRateSelection

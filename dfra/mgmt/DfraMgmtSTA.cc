@@ -808,7 +808,6 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
     EV << "Received Beacon frame\n";
     storeAPInfo(frame->getTransmitterAddress(), frame->getBody());
 
-    Sched schedule = *(Sched*)frame->getAddedFields();
     // if it is out associate AP, restart beacon timeout
     if (isAssociated && frame->getTransmitterAddress() == assocAP.address) {
         EV << "Beacon is from associated AP, restarting beacon timeout timer\n";
@@ -816,10 +815,12 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
         cancelEvent(assocAP.beaconTimeoutMsg);
         scheduleAt(simTime() + MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
 
-        std::string sched( reinterpret_cast<char const*>(schedule.staSchedules), schedule.numStations);
-        mysched = (BYTE)schedule.staSchedules[assocAP.aid-1];
-        EV << "Schedule = " << sched << "\n";
-        EV << "My schedule = "<< (int)mysched << "\n";
+        //Update scheduling info
+        Sched *schedule = (Sched*)frame->getAddedFields();
+        mySchedule.mysched = (BYTE)schedule->staSchedules[assocAP.aid-1];
+        mySchedule.aid = assocAP.aid;
+        mySchedule.frameTypes = schedule->frameTypes;
+
         //APInfo *ap = lookupAP(frame->getTransmitterAddress());
         //ASSERT(ap!=nullptr);
     }
