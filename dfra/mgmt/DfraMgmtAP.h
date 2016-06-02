@@ -63,7 +63,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
         int numStations = 0;
         BYTE frameTypes = 0;
         BYTE *staSchedules = nullptr;
-        int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);;
+        int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);
         Sched(){}
         ~Sched(){delete staSchedules;}
     };

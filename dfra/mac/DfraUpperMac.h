@@ -77,6 +77,15 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         IRateControl *rateControl = nullptr;
         IStatistics *statistics = nullptr;
 
+        //For scheduling info //DT
+        using BYTE =  uint8;
+        struct SchedulingInfo {
+                BYTE frameTypes;
+                BYTE mysched;
+        };
+        SchedulingInfo *mySchedule;
+
+
     protected:
         void initialize() override;
         virtual IMacParameters *extractParameters(const IIeee80211Mode *slowestMandatoryMode);
@@ -99,6 +108,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         virtual void channelAccessGranted(IContentionCallback *callback, int txIndex) override;
         virtual void internalCollision(IContentionCallback *callback, int txIndex) override;
         virtual void transmissionComplete(ITxCallback *callback) override;
+        void scheduleUpdate(cMessage *msg);
 };
 
 } // namespace ieee80211

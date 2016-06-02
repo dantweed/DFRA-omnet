@@ -72,6 +72,8 @@ class INET_API DfraMac : public MACProtocolBase, public IMacRadioInterface
     static simsignal_t stateSignal;
     static simsignal_t radioStateSignal;
 
+
+
   protected:
     virtual int numInitStages() const override {return NUM_INIT_STAGES;}
     virtual void initialize(int) override;

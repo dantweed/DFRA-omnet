@@ -34,6 +34,7 @@
 namespace inet {
 namespace ieee80211 {
 
+#define MSG_CHANGE_SCHED 99
 
 Define_Module(DfraMac);
 
@@ -174,6 +175,8 @@ void DfraMac::handleUpperCommand(cMessage *msg)
             pendingRadioConfigMsg = msg;
         }
     }
+    else if (msg->getKind() == MSG_CHANGE_SCHED)
+        upperMac->scheduleUpdate(msg);
     else {
         throw cRuntimeError("Unrecognized command from mgmt layer: (%s)%s msgkind=%d", msg->getClassName(), msg->getName(), msg->getKind());
     }

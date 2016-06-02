@@ -48,6 +48,9 @@ Define_Module(DfraMgmtSTA);
 #define MK_SCAN_MAXCHANNELTIME    5
 #define MK_BEACON_TIMEOUT         6
 
+#define MSG_CHANGE_SCHED          99
+
+
 #define MAX_BEACONS_MISSED        3.5  // beacon lost timeout, in beacon intervals (doesn't need to be integer)
 
 std::ostream& operator<<(std::ostream& os, const DfraMgmtSTA::ScanningInfo& scanning)
@@ -103,6 +106,8 @@ void DfraMgmtSTA::initialize(int stage)
         assocTimeoutMsg = nullptr;
         myIface = nullptr;
         numChannels = par("numChannels");
+
+        mySchedule = new SchedulingInfo(); //DT
 
         host = getContainingNode(this);
         host->subscribe(NF_LINK_FULL_PROMISCUOUS, this);
@@ -758,7 +763,6 @@ void DfraMgmtSTA::handleAssociationResponseFrame(Ieee80211AssociationResponseFra
         isAssociated = true;
         (APInfo&)assocAP = (*ap);
         assocAP.aid = aid;
-
         emit(NF_L2_ASSOCIATED, myIface);
 
         getContainingNode(this)->bubble("Associated with AP");
@@ -817,9 +821,13 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
 
         //Update scheduling info
         Sched *schedule = (Sched*)frame->getAddedFields();
-        mySchedule.mysched = (BYTE)schedule->staSchedules[assocAP.aid-1];
-        mySchedule.aid = assocAP.aid;
-        mySchedule.frameTypes = schedule->frameTypes;
+
+        mySchedule->mysched = (BYTE)schedule->staSchedules[assocAP.aid-1];
+        mySchedule->frameTypes = schedule->frameTypes;
+        cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
+        msg->setContextPointer(mySchedule);
+
+        send(msg, "macOut");
 
         //APInfo *ap = lookupAP(frame->getTransmitterAddress());
         //ASSERT(ap!=nullptr);
@@ -861,7 +869,7 @@ void DfraMgmtSTA::storeAPInfo(const MACAddress& address, const Ieee80211BeaconFr
     //XXX where to get this from?
     //ap->rxPower = ...
 }
-
+void DfraMgmtSTA::finish() {delete mySchedule;}
 } // namespace ieee80211
 
 } // namespace inet

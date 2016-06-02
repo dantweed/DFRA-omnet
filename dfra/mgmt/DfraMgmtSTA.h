@@ -61,16 +61,18 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     // Stores DFRA scheduling info
     //
     using BYTE =  uint8;
+
     struct Sched {
-        int numStations;
-        BYTE frameTypes;
-        BYTE *staSchedules;
+        int numStations = 0;
+        BYTE frameTypes = 0;
+        BYTE *staSchedules = nullptr;
+        Sched(){}
+        ~Sched(){delete staSchedules;}
     };
 
     struct SchedulingInfo {
         BYTE frameTypes;
         BYTE mysched;
-        int aid;
     };
 
     //
@@ -132,8 +134,8 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     cMessage *assocTimeoutMsg;    // if non-nullptr: association is in progress
     AssociatedAPInfo assocAP;
 
-    //ADDED: Schedule info
-    SchedulingInfo mySchedule;
+    //ADDED: Schedule info //DT
+    SchedulingInfo *mySchedule;
 
   public:
     DfraMgmtSTA() : host(nullptr), interfaceTable(nullptr), myIface(nullptr), numChannels(-1), isScanning(false), isAssociated(false), assocTimeoutMsg(nullptr) {}
@@ -233,6 +235,8 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     virtual void processReassociateCommand(Ieee80211Prim_ReassociateRequest *ctrl);
     virtual void processDisassociateCommand(Ieee80211Prim_DisassociateRequest *ctrl);
     //@}
+
+    void finish();
 };
 
 //} // namespace dfra

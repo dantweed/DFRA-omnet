@@ -40,6 +40,8 @@
 namespace inet {
 namespace ieee80211 {
 
+#define MSG_CHANGE_SCHED 99
+
 Define_Module(DfraUpperMac);
 
 DfraUpperMac::DfraUpperMac()
@@ -122,6 +124,15 @@ void DfraUpperMac::handleMessage(cMessage *msg)
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
     else
         ASSERT(false);
+}
+
+void DfraUpperMac::scheduleUpdate(cMessage *msg)
+{
+    if (msg->getKind() == MSG_CHANGE_SCHED)
+        mySchedule = (SchedulingInfo*)msg->getContextPointer();
+    else
+        ASSERT(false);
+
 }
 
 void DfraUpperMac:: upperFrameReceived(cPacket *msg)
