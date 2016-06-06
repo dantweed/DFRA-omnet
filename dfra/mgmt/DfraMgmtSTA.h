@@ -71,6 +71,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     };
 
     struct SchedulingInfo {
+        int aid;
         BYTE frameTypes;
         BYTE mysched;
     };

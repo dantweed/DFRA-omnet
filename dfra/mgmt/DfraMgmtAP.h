@@ -60,14 +60,20 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     //
     using BYTE =  uint8;
     struct Sched {
+        Sched(){}
+        ~Sched(){delete staSchedules;}
         int numStations = 0;
         BYTE frameTypes = 0;
         BYTE *staSchedules = nullptr;
         int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);
-        Sched(){}
-        ~Sched(){delete staSchedules;}
+        BYTE apSchedule = 0;
     };
 
+    struct SchedulingInfo {
+        int aid;
+        BYTE frameTypes;
+        BYTE mysched;
+    };
 
     class NotificationInfoSta : public cObject
     {
@@ -103,6 +109,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
 
     //ADDED: Schedule info
     Sched *schedule;
+    SchedulingInfo *mySchedule;
 
     // state
     STAList staList;    ///< list of STAs
@@ -113,6 +120,10 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     virtual ~DfraMgmtAP();
 
   protected:
+
+    //FIXME: ACtually implement external scheduling, with a scheduler interface, defined objects, etc
+    void setSchedule(Sched *schedule);
+
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int) override;
 

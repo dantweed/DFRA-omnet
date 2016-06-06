@@ -457,6 +457,9 @@ $O/dfra/mgmt/DfraMgmtAP.o: dfra/mgmt/DfraMgmtAP.cc \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
 	$(INET_PROJ)/src/inet/linklayer/contract/IMACProtocolControlInfo.h \
+	$(INET_PROJ)/src/inet/linklayer/ethernet/EtherFrame.h \
+	$(INET_PROJ)/src/inet/linklayer/ethernet/EtherFrame_m.h \
+	$(INET_PROJ)/src/inet/linklayer/ethernet/Ethernet.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mgmt/Ieee80211MgmtAPBase.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mgmt/Ieee80211MgmtBase.h \

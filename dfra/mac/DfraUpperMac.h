@@ -80,6 +80,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         //For scheduling info //DT
         using BYTE =  uint8;
         struct SchedulingInfo {
+                int aid;
                 BYTE frameTypes;
                 BYTE mysched;
         };

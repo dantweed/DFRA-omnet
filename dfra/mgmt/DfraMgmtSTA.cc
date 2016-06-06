@@ -821,7 +821,7 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
 
         //Update scheduling info
         Sched *schedule = (Sched*)frame->getAddedFields();
-
+        mySchedule->aid = assocAP.aid;
         mySchedule->mysched = (BYTE)schedule->staSchedules[assocAP.aid-1];
         mySchedule->frameTypes = schedule->frameTypes;
         cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);

@@ -40,6 +40,8 @@ using namespace physicallayer;
 Define_Module(DfraMgmtAP);
 Register_Class(DfraMgmtAP::NotificationInfoSta);
 
+#define MSG_CHANGE_SCHED          99
+
 static std::ostream& operator<<(std::ostream& os, const DfraMgmtAP::STAInfo& sta)
 {
     os << "state:" << sta.status;
@@ -64,6 +66,9 @@ void DfraMgmtAP::initialize(int stage)
             throw cRuntimeError("parameter 'numAuthSteps' (number of frames exchanged during authentication) must be 2 or 4, not %d", numAuthSteps);
         channelNumber = -1;    // value will arrive from physical layer in receiveChangeNotification()
         nextAID = 1;
+
+        mySchedule = new SchedulingInfo;
+
         WATCH(ssid);
         WATCH(channelNumber);
         WATCH(beaconInterval);
@@ -140,13 +145,13 @@ void DfraMgmtAP::sendManagementFrame(Ieee80211ManagementFrame *frame, const MACA
     sendDown(frame);
 }
 
-void DfraMgmtAP::sendBeacon()
+void DfraMgmtAP::setSchedule(Sched *newSchedule)
 {
-
-    //Build schedule (will eventually be done through an interface)
     if (!schedule)
         schedule = new Sched;
 
+
+    //Build schedule (will eventually be done through an interface)
     if (!staList.empty()) {
         schedule->numStations = staList.size();
         delete schedule->staSchedules;
@@ -161,6 +166,27 @@ void DfraMgmtAP::sendBeacon()
     } else {
         schedule->frameTypes = 0xff;
     }
+    //temp workaround, only passing nullptr for now
+    if (newSchedule != nullptr) {
+
+    mySchedule->mysched = (BYTE)newSchedule->apSchedule;
+    mySchedule->frameTypes = newSchedule->frameTypes; }
+    else {
+
+        mySchedule->mysched = (BYTE) 0xFF;
+        mySchedule->frameTypes = schedule->frameTypes; }
+    mySchedule->aid = -1;
+    cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
+    msg->setContextPointer(mySchedule);
+    send(msg, "macOut");
+
+}
+
+void DfraMgmtAP::sendBeacon()
+{
+    //FIXME: will be called externally, and this will revert back to only building the beacon from existing values
+    //          may cause issues if values are changing from external sources while this function is executing... consider
+    setSchedule(nullptr);
 
 
     EV << "Sending beacon\n";
@@ -484,6 +510,7 @@ void DfraMgmtAP::stop()
 void DfraMgmtAP::finish()
 {
     if (schedule) delete schedule;
+    if (mySchedule) delete mySchedule;
 }
 
 //} // namespace dfra
