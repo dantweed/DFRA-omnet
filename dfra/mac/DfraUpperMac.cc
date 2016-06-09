@@ -25,7 +25,7 @@
 #include "ITx.h"
 #include "MacUtils.h"
 #include "MacParameters.h"
-#include "FrameExchanges.h"
+#include "dfra/mac/FrameExchanges.h"
 #include "DuplicateDetectors.h"
 #include "IFragmentation.h"
 #include "IRateSelection.h"
@@ -290,6 +290,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
     context.statistics = statistics;
 
     bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
+    //TODO: redirect functions to dfra frame exchange/s ... ??? but need to trace out what we're doing
     if (utils->isBroadcastOrMulticast(frame))
         frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
     else if (useRtsCts)

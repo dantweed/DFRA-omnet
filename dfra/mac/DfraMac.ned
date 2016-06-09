@@ -39,7 +39,7 @@ module LayeredProtocolBase
         @signal[packetSentToLower](type=cPacket);
         @signal[packetReceivedFromLower](type=cPacket);
         @signal[packetFromLowerDropped](type=cPacket);
-        @class(ieee80211::DfraMac);
+        @class(ieee80211::DfraMac);       
 }
 
 // near copy-paste of inet.linklayer.base.MACProtocolBase to work around "compound-module cannot extend a simple-module" error in OMNeT++ 4.x
@@ -139,7 +139,7 @@ module DfraMac extends MACProtocolBase like IIeee80211Mac
         tx: <default("Tx")> like ITx {
             @display("p=198,260");
         }
-        ctn[numContention]: <default("Contention")> like IContention {
+        ctn[numContention]: <default("DfraContention")> like IContention {
             @display("p=295,260,r,60");
         }
         rx: <default("Rx")> like IRx {
