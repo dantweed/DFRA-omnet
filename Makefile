@@ -25,6 +25,7 @@ INCLUDE_PATH = \
     -Idfra/misc \
     -Idfra/node \
     -Idfra/sink \
+    -Iinet-changes \
     -Iresults
 
 # Additional object and library files to link with
@@ -41,9 +42,11 @@ O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
 OBJS = \
-    $O/dfra/mac/DfraEdcaUpperMac.o \
+    $O/dfra/mac/DfraContention.o \
     $O/dfra/mac/DfraMac.o \
+    $O/dfra/mac/FrameExchanges.o \
     $O/dfra/mac/DfraUpperMac.o \
+    $O/dfra/mac/FrameExchange.o \
     $O/dfra/mgmt/DfraAgentSTA.o \
     $O/dfra/mgmt/DfraMgmtAP.o \
     $O/dfra/mgmt/DfraMgmtSTA.o \
@@ -144,6 +147,7 @@ clean:
 	$(Q)-rm -f dfra/misc/*_m.cc dfra/misc/*_m.h dfra/misc/*_sm.cc dfra/misc/*_sm.h
 	$(Q)-rm -f dfra/node/*_m.cc dfra/node/*_m.h dfra/node/*_sm.cc dfra/node/*_sm.h
 	$(Q)-rm -f dfra/sink/*_m.cc dfra/sink/*_m.h dfra/sink/*_sm.cc dfra/sink/*_sm.h
+	$(Q)-rm -f inet-changes/*_m.cc inet-changes/*_m.h inet-changes/*_sm.cc inet-changes/*_sm.h
 	$(Q)-rm -f results/*_m.cc results/*_m.h results/*_sm.cc results/*_sm.h
 
 cleanall: clean
@@ -151,69 +155,33 @@ cleanall: clean
 
 depend:
 	$(qecho) Creating dependencies...
-	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/misc/*.cc dfra/node/*.cc dfra/sink/*.cc results/*.cc
+	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/misc/*.cc dfra/node/*.cc dfra/sink/*.cc inet-changes/*.cc results/*.cc
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
-$O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \
-	dfra/mac/DfraEdcaUpperMac.h \
-	dfra/mac/DfraMac.h \
-	dfra/mac/DfraUpperMac.h \
+$O/dfra/mac/DfraContention.o: dfra/mac/DfraContention.cc \
+	dfra/mac/DfraContention.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
-	$(INET_PROJ)/src/inet/common/DelayedInitializer.h \
+	$(INET_PROJ)/src/inet/common/FSMA.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
 	$(INET_PROJ)/src/inet/common/INETMath.h \
-	$(INET_PROJ)/src/inet/common/INETUtils.h \
 	$(INET_PROJ)/src/inet/common/InitStages.h \
-	$(INET_PROJ)/src/inet/common/LayeredProtocolBase.h \
-	$(INET_PROJ)/src/inet/common/ModuleAccess.h \
-	$(INET_PROJ)/src/inet/common/NotifierConsts.h \
 	$(INET_PROJ)/src/inet/common/Units.h \
 	$(INET_PROJ)/src/inet/common/geometry/common/Coord.h \
 	$(INET_PROJ)/src/inet/common/geometry/common/EulerAngles.h \
-	$(INET_PROJ)/src/inet/common/lifecycle/ILifecycle.h \
-	$(INET_PROJ)/src/inet/common/lifecycle/LifecycleOperation.h \
-	$(INET_PROJ)/src/inet/common/lifecycle/NodeOperations.h \
-	$(INET_PROJ)/src/inet/common/lifecycle/OperationalBase.h \
 	$(INET_PROJ)/src/inet/common/mapping/Interpolation.h \
 	$(INET_PROJ)/src/inet/common/mapping/MappingBase.h \
 	$(INET_PROJ)/src/inet/common/mapping/MappingUtils.h \
-	$(INET_PROJ)/src/inet/common/queue/IPassiveQueue.h \
 	$(INET_PROJ)/src/inet/features.h \
-	$(INET_PROJ)/src/inet/linklayer/base/MACProtocolBase.h \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/DuplicateDetectors.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Fragmentation.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/FrameExchange.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/FrameExchanges.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ICollisionController.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IDuplicateDetector.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFragmentation.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacParameters.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacRadioInterface.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRateControl.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRateSelection.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRx.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IStatistics.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITx.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITxCallback.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IUpperMac.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Mac.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacParameters.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacPlugin.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacUtils.h \
 	$(INET_PROJ)/src/inet/mobility/contract/IMobility.h \
-	$(INET_PROJ)/src/inet/networklayer/common/InterfaceEntry.h \
-	$(INET_PROJ)/src/inet/networklayer/common/InterfaceToken.h \
-	$(INET_PROJ)/src/inet/networklayer/common/L3Address.h \
-	$(INET_PROJ)/src/inet/networklayer/common/ModuleIdAddress.h \
-	$(INET_PROJ)/src/inet/networklayer/common/ModulePathAddress.h \
-	$(INET_PROJ)/src/inet/networklayer/contract/IInterfaceTable.h \
-	$(INET_PROJ)/src/inet/networklayer/contract/ipv4/IPv4Address.h \
-	$(INET_PROJ)/src/inet/networklayer/contract/ipv6/IPv6Address.h \
 	$(INET_PROJ)/src/inet/physicallayer/base/packetlevel/PhysicalLayerDefs.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/bitlevel/ISignalAnalogModel.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IAntenna.h \
@@ -236,12 +204,7 @@ $O/dfra/mac/DfraEdcaUpperMac.o: dfra/mac/DfraEdcaUpperMac.cc \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ISNIR.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmission.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmitter.h \
-	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h \
-	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/IIeee80211Mode.h \
-	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211Band.h \
-	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211Channel.h \
-	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
-	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h
 $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
 	dfra/mac/DfraMac.h \
 	dfra/mac/DfraUpperMac.h \
@@ -316,6 +279,8 @@ $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
 $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
 	dfra/mac/DfraMac.h \
 	dfra/mac/DfraUpperMac.h \
+	dfra/mac/FrameExchange.h \
+	dfra/mac/FrameExchanges.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
 	$(INET_PROJ)/src/inet/common/DelayedInitializer.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
@@ -342,8 +307,6 @@ $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/DuplicateDetectors.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/FrameExchange.h \
-	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/FrameExchanges.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IDuplicateDetector.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFragmentation.h \
@@ -399,6 +362,108 @@ $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211Channel.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
+$O/dfra/mac/FrameExchange.o: dfra/mac/FrameExchange.cc \
+	dfra/mac/FrameExchange.h \
+	$(INET_PROJ)/src/inet/common/Compat.h \
+	$(INET_PROJ)/src/inet/common/INETDefs.h \
+	$(INET_PROJ)/src/inet/common/INETMath.h \
+	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/common/Units.h \
+	$(INET_PROJ)/src/inet/common/geometry/common/Coord.h \
+	$(INET_PROJ)/src/inet/common/geometry/common/EulerAngles.h \
+	$(INET_PROJ)/src/inet/common/mapping/Interpolation.h \
+	$(INET_PROJ)/src/inet/common/mapping/MappingBase.h \
+	$(INET_PROJ)/src/inet/common/mapping/MappingUtils.h \
+	$(INET_PROJ)/src/inet/features.h \
+	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
+	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacParameters.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRx.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITx.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITxCallback.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacPlugin.h \
+	$(INET_PROJ)/src/inet/mobility/contract/IMobility.h \
+	$(INET_PROJ)/src/inet/physicallayer/base/packetlevel/PhysicalLayerDefs.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/bitlevel/ISignalAnalogModel.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IAntenna.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IArrival.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IInterference.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListening.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListeningDecision.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IModulation.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/INoise.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPhysicalLayer.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPhysicalLayerFrame.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPrintableObject.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IRadio.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IRadioFrame.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IRadioSignal.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReceiver.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReception.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReceptionDecision.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReceptionResult.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ISNIR.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmission.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmitter.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h
+$O/dfra/mac/FrameExchanges.o: dfra/mac/FrameExchanges.cc \
+	dfra/mac/FrameExchange.h \
+	dfra/mac/FrameExchanges.h \
+	$(INET_PROJ)/src/inet/common/Compat.h \
+	$(INET_PROJ)/src/inet/common/FSMA.h \
+	$(INET_PROJ)/src/inet/common/INETDefs.h \
+	$(INET_PROJ)/src/inet/common/INETMath.h \
+	$(INET_PROJ)/src/inet/common/INETUtils.h \
+	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/common/Units.h \
+	$(INET_PROJ)/src/inet/common/geometry/common/Coord.h \
+	$(INET_PROJ)/src/inet/common/geometry/common/EulerAngles.h \
+	$(INET_PROJ)/src/inet/common/mapping/Interpolation.h \
+	$(INET_PROJ)/src/inet/common/mapping/MappingBase.h \
+	$(INET_PROJ)/src/inet/common/mapping/MappingUtils.h \
+	$(INET_PROJ)/src/inet/features.h \
+	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
+	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacParameters.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRx.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IStatistics.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITx.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITxCallback.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacPlugin.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacUtils.h \
+	$(INET_PROJ)/src/inet/mobility/contract/IMobility.h \
+	$(INET_PROJ)/src/inet/physicallayer/base/packetlevel/PhysicalLayerDefs.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/bitlevel/ISignalAnalogModel.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IAntenna.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IArrival.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IInterference.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListening.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListeningDecision.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IModulation.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/INoise.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPhysicalLayer.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPhysicalLayerFrame.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPrintableObject.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IRadio.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IRadioFrame.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IRadioSignal.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReceiver.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReception.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReceptionDecision.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IReceptionResult.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ISNIR.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmission.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmitter.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h \
+	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/IIeee80211Mode.h
 $O/dfra/mgmt/DfraAgentSTA.o: dfra/mgmt/DfraAgentSTA.cc \
 	dfra/mgmt/DfraAgentSTA.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
@@ -457,9 +522,6 @@ $O/dfra/mgmt/DfraMgmtAP.o: dfra/mgmt/DfraMgmtAP.cc \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
 	$(INET_PROJ)/src/inet/linklayer/contract/IMACProtocolControlInfo.h \
-	$(INET_PROJ)/src/inet/linklayer/ethernet/EtherFrame.h \
-	$(INET_PROJ)/src/inet/linklayer/ethernet/EtherFrame_m.h \
-	$(INET_PROJ)/src/inet/linklayer/ethernet/Ethernet.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mgmt/Ieee80211MgmtAPBase.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mgmt/Ieee80211MgmtBase.h \

@@ -48,6 +48,7 @@ class IRateControl;
 class IStatistics;
 
 class DfraMac;
+class DfraContention;
 
 /**
  * UpperMac for DCF mode.
