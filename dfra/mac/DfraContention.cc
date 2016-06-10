@@ -132,6 +132,9 @@ int DfraContention::computeCw(int cwMin, int cwMax, int retryCount)
     return cw;
 }
 
+//TODO: Figure this monster out.. this is the FSM I need to modify/replace to implement the desired behaviour..
+// Alternatively, could skip the frame exhange/s and just implement directly in upper mac with access to tx class
+// for "immediate" transmission.. but this is more likely to introduce unpredictable behaviour
 void DfraContention::handleWithFSM(EventType event, cMessage *msg)
 {
     emit(stateChangedSignal, fsm.getState());
