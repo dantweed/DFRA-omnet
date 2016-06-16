@@ -128,8 +128,10 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 
 void DfraUpperMac::scheduleUpdate(cMessage *msg)
 {
-    if (msg->getKind() == MSG_CHANGE_SCHED)
+    if (msg->getKind() == MSG_CHANGE_SCHED) {
         mySchedule = (SchedulingInfo*)msg->getContextPointer();
+        delete(msg);
+    }
     else
         ASSERT(false);
 

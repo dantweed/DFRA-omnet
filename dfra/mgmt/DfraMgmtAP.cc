@@ -166,16 +166,17 @@ void DfraMgmtAP::setSchedule(Sched *newSchedule)
     } else {
         schedule->frameTypes = 0xff;
     }
-    //temp workaround, only passing nullptr for now
+    //temporary, only passing nullptr for now, see FIXME comment in next functions
     if (newSchedule != nullptr) {
-
-    mySchedule->mysched = (BYTE)newSchedule->apSchedule;
-    mySchedule->frameTypes = newSchedule->frameTypes; }
+        mySchedule->mysched = (BYTE)newSchedule->apSchedule;
+        mySchedule->frameTypes = newSchedule->frameTypes;
+    }
     else {
-
         mySchedule->mysched = (BYTE) 0xFF;
-        mySchedule->frameTypes = schedule->frameTypes; }
-    mySchedule->aid = -1;
+        mySchedule->frameTypes = schedule->frameTypes;
+    }
+
+    mySchedule->aid = -1; //-1 used for AP
     cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
     msg->setContextPointer(mySchedule);
     send(msg, "macOut");
