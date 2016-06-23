@@ -24,6 +24,9 @@
 #include "IFrameExchange.h"
 #include "AccessCategory.h"
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
+#include "FrameExchange.h"
+#include "dfra/mac/FrameExchange.h"
+#include "DfraContention.h"
 
 using namespace inet::physicallayer;
 
@@ -97,8 +100,11 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         virtual void startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac);
         virtual void frameExchangeFinished(IFrameExchange *what, bool successful) override;
 
+        virtual void reschedule();
+
         void sendAck(Ieee80211DataOrMgmtFrame *frame);
         void sendCts(Ieee80211RTSFrame *frame);
+
 
     public:
         DfraUpperMac();
@@ -109,6 +115,9 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         virtual void corruptedFrameReceived() override;
         virtual void channelAccessGranted(IContentionCallback *callback, int txIndex) override;
         virtual void internalCollision(IContentionCallback *callback, int txIndex) override;
+
+        void reportReschedule();
+
         virtual void transmissionComplete(ITxCallback *callback) override;
         void scheduleUpdate(cMessage *msg);
 };

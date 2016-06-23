@@ -24,18 +24,22 @@
 #include "IRx.h"
 #include "inet/common/FSMA.h"
 #include "Ieee80211Frame_m.h"
+#include "dfra/mac/FrameExchange.h"
+
 
 namespace inet {
 namespace ieee80211 {
 
 simsignal_t DfraContention::stateChangedSignal = registerSignal("stateChanged");
+bool DfraContention::finallyReportFailure = false;
 
 // for @statistic; don't forget to keep synchronized the C++ enum and the runtime enum definition
 Register_Enum(DfraContention::State,
         (DfraContention::IDLE,
          DfraContention::DEFER,
          DfraContention::IFS_AND_BACKOFF,
-         DfraContention::OWNING));
+         DfraContention::OWNING
+         ));
 
 Define_Module(DfraContention);
 
@@ -74,7 +78,7 @@ void DfraContention::initialize(int stage)
         fsm.setState(IDLE, "IDLE");
 
         WATCH(txIndex);
-        WATCH(ifs);
+        WATCH(ifs);//
         WATCH(eifs);
         WATCH(cwMin);
         WATCH(cwMax);
@@ -132,12 +136,19 @@ int DfraContention::computeCw(int cwMin, int cwMax, int retryCount)
     return cw;
 }
 
+
+
 void DfraContention::handleWithFSM(EventType event, cMessage *msg)
 {
     emit(stateChangedSignal, fsm.getState());
     EV_DEBUG << "handleWithFSM: processing event " << getEventName(event) << "\n";
     bool finallyReportInternalCollision = false;
     bool finallyReportChannelAccessGranted = false;
+
+    //bool finallyReportFailure = false;
+
+    //finallyReportFailure = false;
+
     FSMA_Switch(fsm) {
         FSMA_State(IDLE) {
             FSMA_Enter(mac->sendDownPendingRadioConfigMsg());
@@ -158,11 +169,14 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
         }
         FSMA_State(DEFER) {
             FSMA_Enter(mac->sendDownPendingRadioConfigMsg());
+           /*
             FSMA_Event_Transition(Restarting-IFS-and-Backoff,
                     event == MEDIUM_STATE_CHANGED && mediumFree,
                     IFS_AND_BACKOFF,
                     scheduleTransmissionRequest();
                     );
+           */
+
             FSMA_Event_Transition(Use-EIFS,
                     event == CORRUPTED_FRAME_RECEIVED,
                     DEFER,
@@ -170,6 +184,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     );
             FSMA_Fail_On_Unhandled_Event();
         }
+
         FSMA_State(IFS_AND_BACKOFF) {
             FSMA_Enter();
             FSMA_Event_Transition(Backoff-expired,
@@ -177,12 +192,18 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     OWNING,
                     finallyReportChannelAccessGranted = true;
                     );
+
+
             FSMA_Event_Transition(Defer-on-channel-busy,
                     event == MEDIUM_STATE_CHANGED && !mediumFree,
                     DEFER,
+                    finallyReportFailure = true;
                     cancelTransmissionRequest();
-                    computeRemainingBackoffSlots();
+
+            //computeRemainingBackoffSlots();
                     );
+
+          /*
             FSMA_Event_Transition(optimized-internal-collision,
                     event == INTERNAL_COLLISION && backoffOptimizationDelta != SIMTIME_ZERO,
                     IFS_AND_BACKOFF,
@@ -193,6 +214,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     IDLE,
                     finallyReportInternalCollision = true; lastIdleStartTime = simTime();
                     );
+          */
             FSMA_Event_Transition(Use-EIFS,
                     event == CORRUPTED_FRAME_RECEIVED,
                     IFS_AND_BACKOFF,
@@ -200,25 +222,68 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     );
             FSMA_Fail_On_Unhandled_Event();
         }
+
         FSMA_State(OWNING) {
             FSMA_Event_Transition(Channel-Released,
                     event == CHANNEL_RELEASED,
                     IDLE,
+                    //finallyReportSuccess = true;
                     lastIdleStartTime = simTime();
                     );
             FSMA_Ignore_Event(event==MEDIUM_STATE_CHANGED);
             FSMA_Ignore_Event(event==CORRUPTED_FRAME_RECEIVED);
             FSMA_Fail_On_Unhandled_Event();
         }
+
+
     }
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
         reportChannelAccessGranted();
     if (finallyReportInternalCollision)
         reportInternalCollision();
+
+    //FrameExchange report;
+
+   // if(finallyReportFailure)
+   //     report.reportFailure();
+
+
+/*
+   FrameExchange *report = new FrameExchange;
+    if (finallyReportFailure)
+        report->reportFailure();
+    if (finallyReportSuccess)
+        report->reportSuccess();
+*/
+
     if (hasGUI())
         updateDisplayString();
 }
+
+/*
+bool DfraContention::reportReschedule(bool fail)
+{
+  if (fail)   {return true;}
+  else  {return false;}
+}
+*/
+/*
+bool DfraContention::isFailure()
+{
+    //if (finallyReportFailure) return true;
+    //else if (finallyReportSuccess) return false;
+}
+*/
+
+/*
+void DfraContention::reportReschedule()
+{
+    //IUpperMac *upperMacNew = dynamic_cast<IUpperMac*>(upperMac);
+
+    //upperMacNew->busyAndReschedule(callback, txIndex);
+}
+*/
 
 void DfraContention::mediumStateChanged(bool mediumFree)
 {
@@ -251,7 +316,13 @@ void DfraContention::internalCollision(int txIndex)
     Enter_Method("internalCollision()");
     handleWithFSM(INTERNAL_COLLISION, nullptr);
 }
-
+/*
+void DfraContention::busyAndReschedule(int txIndex)
+{
+    Enter_Method("busyAndReschedule()");
+    handleWithFSM(BUSY_AND_RESCHEDULE, nullptr);
+}
+*/
 void DfraContention::channelReleased()
 {
     Enter_Method("channelReleased()");
@@ -280,7 +351,9 @@ void DfraContention::scheduleTransmissionRequest()
 
     simtime_t now = simTime();
     bool useEifs = endEifsTime > now + ifs;
-    simtime_t waitInterval = (useEifs ? eifs : ifs) + backoffSlots * slotTime;
+    //simtime_t waitInterval = (useEifs ? eifs : ifs) + backoffSlots * slotTime;
+
+    simtime_t waitInterval = (useEifs ? eifs : ifs) + 5 * slotTime;
 
     if (backoffOptimization && fsm.getState() == IDLE) {
         // we can pretend the frame has arrived into the queue a little bit earlier, and may be able to start transmitting immediately
@@ -289,6 +362,7 @@ void DfraContention::scheduleTransmissionRequest()
         backoffOptimizationDelta = std::min(waitInterval, std::min(elapsedFreeChannelTime, elapsedIdleTime));
         if (backoffOptimizationDelta > SIMTIME_ZERO)
             waitInterval -= backoffOptimizationDelta;
+
     }
     scheduledTransmissionTime = now + waitInterval;
     scheduleTransmissionRequestFor(scheduledTransmissionTime);
@@ -309,6 +383,8 @@ void DfraContention::computeRemainingBackoffSlots()
         backoffSlots = remainingSlots;
 }
 
+
+
 void DfraContention::reportChannelAccessGranted()
 {
     upperMac->channelAccessGranted(callback, txIndex);
@@ -318,6 +394,9 @@ void DfraContention::reportInternalCollision()
 {
     upperMac->internalCollision(callback, txIndex);
 }
+
+
+
 
 void DfraContention::revokeBackoffOptimization() //TODO: What does this do?
 {

@@ -19,6 +19,7 @@
 
 #include "DfraUpperMac.h"
 #include "DfraMac.h"
+#include "DfraContention.h"
 #include "Ieee80211Mac.h"
 #include "IRx.h"
 #include "IContention.h"
@@ -26,6 +27,7 @@
 #include "MacUtils.h"
 #include "MacParameters.h"
 #include "dfra/mac/FrameExchanges.h"
+#include "dfra/mac/FrameExchange.h"
 #include "DuplicateDetectors.h"
 #include "IFragmentation.h"
 #include "IRateSelection.h"
@@ -93,6 +95,10 @@ void DfraUpperMac::initialize()
 
 inline double fallback(double a, double b) {return a!=-1 ? a : b;}
 inline simtime_t fallback(simtime_t a, simtime_t b) {return a!=-1 ? a : b;}
+
+//DfraContention report = new DfraContention();
+//report->finallyReportFailure;
+
 
 IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMandatoryMode)
 {
@@ -264,12 +270,24 @@ void DfraUpperMac::internalCollision(IContentionCallback *callback, int txIndex)
         callback->internalCollision(txIndex);
 }
 
+/*
+void DfraUpperMac::busyAndReschedule(IContentionCallback *callback, int txIndex)
+{
+   Enter_Method("busyAndReschedule()");
+   IContentionCallback *callbackNew = dynamic_cast<IContentionCallback*>(callback);
+    if (callbackNew)
+        callbackNew->busyAndReschedule(txIndex);
+}
+*/
+
+
 void DfraUpperMac::transmissionComplete(ITxCallback *callback)
 {
     Enter_Method("transmissionComplete()");
     if (callback)
         callback->transmissionComplete();
 }
+
 
 void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
 {
@@ -299,6 +317,18 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
 
     frameExchange->start();
+}
+
+void DfraUpperMac::reschedule()
+{
+    DfraContention report;
+
+    if(report.finallyReportFailure){
+        report.scheduleTransmissionRequest();
+
+
+
+    }
 }
 
 void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)

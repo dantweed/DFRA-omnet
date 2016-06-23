@@ -1,12 +1,12 @@
 #
-# OMNeT++/OMNEST Makefile for DFRA
+# OMNeT++/OMNEST Makefile for DFRA-omnet
 #
 # This file was generated with the command:
-#  opp_makemake -f --deep -O out -I../inet/src -I../inet/src/inet/linklayer/ieee80211/mac -L../inet/out/$$\(CONFIGNAME\)/src -lINET -DINET_IMPORT -KINET_PROJ=../inet
+#  opp_makemake -f --deep -O out -I../inet/src -I../inet/src/inet/linklayer/ieee80211/mac -L../inet/out/$$\(CONFIGNAME\)/src -lINET -KINET_PROJ=../inet
 #
 
 # Name of target to be created (-o option)
-TARGET = DFRA$(EXE_SUFFIX)
+TARGET = DFRA-omnet$(EXE_SUFFIX)
 
 # User interface (uncomment one) (-u option)
 USERIF_LIBS = $(ALL_ENV_LIBS) # that is, $(TKENV_LIBS) $(QTENV_LIBS) $(CMDENV_LIBS)
@@ -42,14 +42,14 @@ O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
 OBJS = \
-    $O/dfra/mac/DfraContention.o \
-    $O/dfra/mac/DfraMac.o \
     $O/dfra/mac/FrameExchanges.o \
-    $O/dfra/mac/DfraUpperMac.o \
+    $O/dfra/mac/DfraMac.o \
     $O/dfra/mac/FrameExchange.o \
-    $O/dfra/mgmt/DfraAgentSTA.o \
+    $O/dfra/mac/DfraUpperMac.o \
+    $O/dfra/mac/DfraContention.o \
     $O/dfra/mgmt/DfraMgmtAP.o \
     $O/dfra/mgmt/DfraMgmtSTA.o \
+    $O/dfra/mgmt/DfraAgentSTA.o \
     $O/dfra/misc/MeteredChannel.o \
     $O/dfra/sink/UDPThrSink.o
 
@@ -86,7 +86,7 @@ include $(CONFIGFILE)
 OMNETPP_LIB_SUBDIR = $(OMNETPP_LIB_DIR)/$(TOOLCHAIN_NAME)
 OMNETPP_LIBS = -L"$(OMNETPP_LIB_SUBDIR)" -L"$(OMNETPP_LIB_DIR)" -loppmain$D $(USERIF_LIBS) $(KERNEL_LIBS) $(SYS_LIBS)
 
-COPTS = $(CFLAGS) -DINET_IMPORT $(INCLUDE_PATH) -I$(OMNETPP_INCL_DIR)
+COPTS = $(CFLAGS)  $(INCLUDE_PATH) -I$(OMNETPP_INCL_DIR)
 MSGCOPTS = $(INCLUDE_PATH)
 SMCOPTS =
 
@@ -139,7 +139,7 @@ smheaders: $(SMFILES:.sm=_sm.h)
 clean:
 	$(qecho) Cleaning...
 	$(Q)-rm -rf $O
-	$(Q)-rm -f DFRA DFRA.exe libDFRA.so libDFRA.a libDFRA.dll libDFRA.dylib
+	$(Q)-rm -f DFRA-omnet DFRA-omnet.exe libDFRA-omnet.so libDFRA-omnet.a libDFRA-omnet.dll libDFRA-omnet.dylib
 	$(Q)-rm -f ./*_m.cc ./*_m.h ./*_sm.cc ./*_sm.h
 	$(Q)-rm -f dfra/*_m.cc dfra/*_m.h dfra/*_sm.cc dfra/*_sm.h
 	$(Q)-rm -f dfra/mac/*_m.cc dfra/mac/*_m.h dfra/mac/*_sm.cc dfra/mac/*_sm.h
@@ -160,6 +160,7 @@ depend:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 $O/dfra/mac/DfraContention.o: dfra/mac/DfraContention.cc \
 	dfra/mac/DfraContention.h \
+	dfra/mac/FrameExchange.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
 	$(INET_PROJ)/src/inet/common/FSMA.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
@@ -174,13 +175,17 @@ $O/dfra/mac/DfraContention.o: dfra/mac/DfraContention.cc \
 	$(INET_PROJ)/src/inet/features.h \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ICollisionController.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacRadioInterface.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRx.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IStatistics.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITxCallback.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IUpperMac.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacPlugin.h \
 	$(INET_PROJ)/src/inet/mobility/contract/IMobility.h \
 	$(INET_PROJ)/src/inet/physicallayer/base/packetlevel/PhysicalLayerDefs.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/bitlevel/ISignalAnalogModel.h \
@@ -206,8 +211,10 @@ $O/dfra/mac/DfraContention.o: dfra/mac/DfraContention.cc \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ITransmitter.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h
 $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
+	dfra/mac/DfraContention.h \
 	dfra/mac/DfraMac.h \
 	dfra/mac/DfraUpperMac.h \
+	dfra/mac/FrameExchange.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
 	$(INET_PROJ)/src/inet/common/DelayedInitializer.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
@@ -232,13 +239,17 @@ $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/FrameExchange.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ICollisionController.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacRadioInterface.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IRx.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITx.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ITxCallback.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IUpperMac.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/MacPlugin.h \
 	$(INET_PROJ)/src/inet/mobility/contract/IMobility.h \
 	$(INET_PROJ)/src/inet/networklayer/common/InterfaceEntry.h \
 	$(INET_PROJ)/src/inet/networklayer/common/InterfaceToken.h \
@@ -277,6 +288,7 @@ $O/dfra/mac/DfraMac.o: dfra/mac/DfraMac.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
 $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
+	dfra/mac/DfraContention.h \
 	dfra/mac/DfraMac.h \
 	dfra/mac/DfraUpperMac.h \
 	dfra/mac/FrameExchange.h \
@@ -307,6 +319,8 @@ $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/DuplicateDetectors.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/FrameExchange.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ICollisionController.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IDuplicateDetector.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFragmentation.h \
@@ -363,6 +377,7 @@ $O/dfra/mac/DfraUpperMac.o: dfra/mac/DfraUpperMac.cc \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h \
 	$(INET_PROJ)/src/inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h
 $O/dfra/mac/FrameExchange.o: dfra/mac/FrameExchange.cc \
+	dfra/mac/DfraContention.h \
 	dfra/mac/FrameExchange.h \
 	$(INET_PROJ)/src/inet/common/Compat.h \
 	$(INET_PROJ)/src/inet/common/INETDefs.h \
@@ -378,6 +393,7 @@ $O/dfra/mac/FrameExchange.o: dfra/mac/FrameExchange.cc \
 	$(INET_PROJ)/src/inet/linklayer/common/Ieee802Ctrl_m.h \
 	$(INET_PROJ)/src/inet/linklayer/common/MACAddress.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/AccessCategory.h \
+	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/ICollisionController.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IContention.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IFrameExchange.h \
 	$(INET_PROJ)/src/inet/linklayer/ieee80211/mac/IMacParameters.h \

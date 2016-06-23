@@ -23,6 +23,7 @@
 #include "ITx.h"
 #include "IRx.h"
 #include "Ieee80211Frame_m.h"
+#include "DfraContention.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -111,6 +112,12 @@ void FsmBasedFrameExchange::internalCollision(int txIndex)
 {
     handleWithFSM(EVENT_INTERNALCOLLISION);
 }
+/*
+void FsmBasedFrameExchange::busyAndReschedule(int txIndex)
+{
+    handleWithFSM(EVENT_BUSYANDRESCHEDULE);
+}
+*/
 
 void FsmBasedFrameExchange::handleSelfMessage(cMessage *msg)
 {

@@ -68,8 +68,8 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
         virtual void startContention(int txIndex, simtime_t ifs, simtime_t eifs, int cwMin, int cwMax, simtime_t slotTime, int retryCount);
         virtual void transmitFrame(Ieee80211Frame *frame, simtime_t ifs);
         virtual void releaseChannel(int txIndex);
-        virtual void reportSuccess();
-        virtual void reportFailure();
+
+
 
         virtual FrameProcessingResult lowerFrameReceived(Ieee80211Frame *frame) override;
         virtual void corruptedOrNotForUsFrameReceived() override;
@@ -78,13 +78,17 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
     public:
         FrameExchange(FrameExchangeContext *context, IFinishedCallback *callback);
         virtual ~FrameExchange();
+
+        virtual void reportSuccess();
+        virtual void reportFailure();
+
 };
 
 class INET_API FsmBasedFrameExchange : public FrameExchange
 {
     protected:
         cFSM fsm;
-        enum EventType { EVENT_START, EVENT_FRAMEARRIVED, EVENT_CORRUPTEDFRAMEARRIVED, EVENT_TXFINISHED, EVENT_INTERNALCOLLISION, EVENT_TIMER };
+        enum EventType { EVENT_START, EVENT_FRAMEARRIVED, EVENT_CORRUPTEDFRAMEARRIVED, EVENT_TXFINISHED, EVENT_INTERNALCOLLISION, EVENT_TIMER, EVENT_BUSYANDRESCHEDULE };
 
     protected:
         virtual FrameProcessingResult handleWithFSM(EventType eventType, cMessage *frameOrTimer=nullptr) = 0;  // return value: for EVENT_FRAMEARRIVED: whether frame was processed; unused otherwise
@@ -96,6 +100,9 @@ class INET_API FsmBasedFrameExchange : public FrameExchange
         virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void transmissionComplete() override;
         virtual void internalCollision(int txIndex) override;
+
+        //void reportReschedule(int txIndex) ;
+
         virtual void handleSelfMessage(cMessage* timer) override;
 };
 
@@ -157,6 +164,9 @@ class INET_API StepBasedFrameExchange : public FrameExchange
         virtual void corruptedOrNotForUsFrameReceived() override;
         virtual void channelAccessGranted(int txIndex) override;
         virtual void internalCollision(int txIndex) override;
+
+        //void busyAndReschedule(int txIndex);
+
         virtual void transmissionComplete() override;
         virtual void handleSelfMessage(cMessage *timer) override;
 };
