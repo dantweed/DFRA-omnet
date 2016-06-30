@@ -102,7 +102,7 @@ DfraContention::~DfraContention()
 }
 
 void DfraContention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, int cwMax, simtime_t slotTime, int retryCount, IContentionCallback *callback)
-{
+{//DT: This is where actual channel access attempts occur
     Enter_Method("startContention()");
     ASSERT(fsm.getState() == IDLE);
     this->ifs = ifs;
@@ -114,7 +114,7 @@ void DfraContention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, i
     this->callback = callback;
 
     int cw = computeCw(cwMin, cwMax, retryCount);
-    backoffSlots = intrand(cw + 1);
+    backoffSlots = intrand(cw + 1); //DT: Change to deterministic from higher levels (not hard)
 
 #ifdef NS3_VALIDATION
     static const char *AC[] = {"AC_BE", "AC_BK", "AC_VI", "AC_VO"};
@@ -132,9 +132,6 @@ int DfraContention::computeCw(int cwMin, int cwMax, int retryCount)
     return cw;
 }
 
-//TODO: Figure this monster out.. this is the FSM I need to modify/replace to implement the desired behaviour..
-// Alternatively, could skip the frame exhange/s and just implement directly in upper mac with access to tx class
-// for "immediate" transmission.. but this is more likely to introduce unpredictable behaviour
 void DfraContention::handleWithFSM(EventType event, cMessage *msg)
 {
     emit(stateChangedSignal, fsm.getState());
@@ -151,7 +148,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     );
             FSMA_Event_Transition(Busy,
                     event == START && !mediumFree,
-                    DEFER,
+                    DEFER,//DT
                     ;
                     );
             FSMA_Ignore_Event(event==MEDIUM_STATE_CHANGED);
@@ -184,7 +181,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     event == MEDIUM_STATE_CHANGED && !mediumFree,
                     DEFER,
                     cancelTransmissionRequest();
-                    computeRemainingBackoffSlots();
+                    computeRemainingBackoffSlots();//DT
                     );
             FSMA_Event_Transition(optimized-internal-collision,
                     event == INTERNAL_COLLISION && backoffOptimizationDelta != SIMTIME_ZERO,

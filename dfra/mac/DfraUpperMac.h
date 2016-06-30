@@ -79,14 +79,28 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         IStatistics *statistics = nullptr;
 
         //For scheduling info //DT
-        using BYTE =  uint8;
-        struct SchedulingInfo {
+        using BYTE = uint8;
+        struct SchedulingInfo{
                 int aid;
                 BYTE frameTypes;
                 BYTE mysched;
+                simtime_t beaconReference;
+                simtime_t drbLength;
+                SchedulingInfo(){}
+                ~SchedulingInfo(){}
         };
         SchedulingInfo *mySchedule;
 
+        int currDRBnum = 0;
+
+        struct txElem :cObject {
+            int retryNumber;;
+            Ieee80211DataOrMgmtFrame *frame;
+            txElem(int retries, Ieee80211DataOrMgmtFrame *frame_) {
+                retryNumber = retries;
+                frame =  frame_;
+            }
+        };
 
     protected:
         void initialize() override;

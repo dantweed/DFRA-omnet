@@ -214,7 +214,7 @@ void SendDataWithAckFrameExchange::processInternalCollision(int step)
     }
 }
 
-void SendDataWithAckFrameExchange::retry()
+void SendDataWithAckFrameExchange::retry()//TODO: retry ==== reschedule due to no ACK rec'd
 {
     releaseChannel();
     // 9.19.2.6 Retransmit procedures
@@ -358,7 +358,7 @@ SendMulticastDataFrameExchange::SendMulticastDataFrameExchange(FrameExchangeCont
 
 SendMulticastDataFrameExchange::~SendMulticastDataFrameExchange()
 {
-    delete dataFrame;
+    delete dataFrame; //DT: Moved deletion of frame to upperMac
 }
 
 std::string SendMulticastDataFrameExchange::info() const
@@ -383,14 +383,14 @@ void SendMulticastDataFrameExchange::startContention()
 }
 
 void SendMulticastDataFrameExchange::internalCollision(int txIndex)
-{
-    if (++retryCount < params->getShortRetryLimit()) {
-        dataFrame->setRetry(true);
-        startContention();
-    }
-    else {
+{ //DT: Using internal collision to mean not able to win the channel at first DRB
+//    if (++retryCount < params->getShortRetryLimit()) {
+//        dataFrame->setRetry(true);
+//        startContention();
+//    }
+//    else {
         reportFailure();
-    }
+  //  }
 }
 
 void SendMulticastDataFrameExchange::channelAccessGranted(int txIndex)

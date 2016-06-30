@@ -19,6 +19,7 @@ INCLUDE_PATH = \
     -I../inet/src \
     -I../inet/src/inet/linklayer/ieee80211/mac \
     -I. \
+    -IInvestigations \
     -Idfra \
     -Idfra/mac \
     -Idfra/mgmt \
@@ -141,6 +142,7 @@ clean:
 	$(Q)-rm -rf $O
 	$(Q)-rm -f DFRA DFRA.exe libDFRA.so libDFRA.a libDFRA.dll libDFRA.dylib
 	$(Q)-rm -f ./*_m.cc ./*_m.h ./*_sm.cc ./*_sm.h
+	$(Q)-rm -f Investigations/*_m.cc Investigations/*_m.h Investigations/*_sm.cc Investigations/*_sm.h
 	$(Q)-rm -f dfra/*_m.cc dfra/*_m.h dfra/*_sm.cc dfra/*_sm.h
 	$(Q)-rm -f dfra/mac/*_m.cc dfra/mac/*_m.h dfra/mac/*_sm.cc dfra/mac/*_sm.h
 	$(Q)-rm -f dfra/mgmt/*_m.cc dfra/mgmt/*_m.h dfra/mgmt/*_sm.cc dfra/mgmt/*_sm.h
@@ -155,7 +157,7 @@ cleanall: clean
 
 depend:
 	$(qecho) Creating dependencies...
-	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/misc/*.cc dfra/node/*.cc dfra/sink/*.cc inet-changes/*.cc results/*.cc
+	$(Q)$(MAKEDEPEND) $(INCLUDE_PATH) -f Makefile -P\$$O/ -- $(MSG_CC_FILES) $(SM_CC_FILES)  ./*.cc Investigations/*.cc dfra/*.cc dfra/mac/*.cc dfra/mgmt/*.cc dfra/misc/*.cc dfra/node/*.cc dfra/sink/*.cc inet-changes/*.cc results/*.cc
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 $O/dfra/mac/DfraContention.o: dfra/mac/DfraContention.cc \

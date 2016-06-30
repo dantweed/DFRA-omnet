@@ -41,6 +41,7 @@ namespace inet {
 namespace ieee80211 {
 
 #define MSG_CHANGE_SCHED 99
+#define ST_FRAME_EXCHANGE 1
 
 Define_Module(DfraUpperMac);
 
@@ -67,7 +68,7 @@ void DfraUpperMac::initialize()
     contention = nullptr;
     collectContentionModules(getModuleByPath(par("firstContentionModule")), contention);
 
-    maxQueueSize = par("maxQueueSize");
+    maxQueueSize = par("maxQueueSize"); //14 per parameters currently
     transmissionQueue.setName("txQueue");
     transmissionQueue.setup(par("prioritizeMulticast") ? (CompareFunc)MacUtils::cmpMgmtOverMulticastOverUnicast : (CompareFunc)MacUtils::cmpMgmtOverData);
 
@@ -120,7 +121,9 @@ IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMan
 
 void DfraUpperMac::handleMessage(cMessage *msg)
 {
-    if (msg->getContextPointer() != nullptr)
+    if (msg->getKind() == ST_FRAME_EXCHANGE) //DRB scheduling control
+        frameExchange->start();
+    else if (msg->getContextPointer() != nullptr)
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
     else
         ASSERT(false);
@@ -129,6 +132,7 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 void DfraUpperMac::scheduleUpdate(cMessage *msg)
 {
     if (msg->getKind() == MSG_CHANGE_SCHED) {
+        currDRBnum = 0;
         mySchedule = (SchedulingInfo*)msg->getContextPointer();
         delete(msg);
     }
@@ -192,12 +196,14 @@ void DfraUpperMac::upperFrameReceived(Ieee80211DataOrMgmtFrame *frame)
 
 void DfraUpperMac::enqueue(Ieee80211DataOrMgmtFrame *frame)
 {
-    if (frameExchange)
-        transmissionQueue.insert(frame);
-    else
-        startSendDataFrameExchange(frame, 0, AC_LEGACY);
+    //DT: Changed so that all frames are put in the queue, then removed later on frame exchange finished
+    txElem *elem = new txElem(0,frame);
+    transmissionQueue.insert(elem);
+    if (!frameExchange)
+        startSendDataFrameExchange(elem->frame, 0, AC_LEGACY);
 }
 
+//DT: need to work on this to have DFRA conformity on association reqs/responses
 void DfraUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
 {
     Enter_Method("lowerFrameReceived(\"%s\")", frame->getName());
@@ -276,7 +282,6 @@ void DfraUpperMac::transmissionComplete(ITxCallback *callback)
 void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
 {
     ASSERT(!frameExchange);
-//FIXME: Control Tx, need to know which module we are in, and what our AID is (note AID = -1 tells us we are AP)
     if (utils->isBroadcastOrMulticast(frame))
         utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
     else
@@ -284,7 +289,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
     FrameExchangeContext context;
     context.ownerModule = this;
-    context.params = params;
+    context.params = params;  //Change DIFS and backoff slots (CWmax/min) here as needed
     context.utils = utils;
     context.contention = contention;
     context.tx = tx;
@@ -292,27 +297,46 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
     context.statistics = statistics;
 
     bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
-    //TODO: redirect functions to dfra frame exchange/s ... ??? but need to trace out what we're doing
+
     if (utils->isBroadcastOrMulticast(frame))
         frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
     else if (useRtsCts)
-        frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac);
+        frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
     else
         frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
 
-    frameExchange->start();
+    //DT: Need to figure out best way to do this w/o blocking (as that would screw up the simulation
+    //    while (simTime() < nextTxOp){}
+    scheduleAt(mySchedule->beaconReference+currDRBnum*mySchedule->drbLength , new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
+    //frameExchange->start();
 }
 
+
+
+//DT: Edited to use queue to store for retransmission, now need to track retry attempts (may need to use different object in the queue
 void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
-{
+{//DT: TODO: rewrite this so it is more logical (!successful first, to eliminate duplicate lines of code for checking if tx queue is empty
     EV_INFO << "Frame exchange finished" << std::endl;
+    //Ieee80211DataOrMgmtFrame *frame = nullptr;
+    txElem *elem = nullptr;
+    if (successful) {
+        transmissionQueue.pop();
+        if (!transmissionQueue.isEmpty())
+            elem = check_and_cast<txElem *>(transmissionQueue.front());
+            //frame = check_and_cast<Ieee80211DataOrMgmtFrame *>(transmissionQueue.front());//.pop())
+    }
+    else {
+        elem = new txElem(*(check_and_cast<txElem *>(transmissionQueue.pop())));
+        if (elem->retryNumber++ > params->getShortRetryLimit()) { //Drop after retry limit (not RTS/CTS supported yet)
+            delete elem;
+            if (!transmissionQueue.isEmpty())
+                elem = check_and_cast<txElem *>(transmissionQueue.front());
+        }
+    }
     delete frameExchange;
     frameExchange = nullptr;
-
-    if (!transmissionQueue.empty()) {
-        Ieee80211DataOrMgmtFrame *frame = check_and_cast<Ieee80211DataOrMgmtFrame *>(transmissionQueue.pop());
-        startSendDataFrameExchange(frame, 0, AC_LEGACY);
-    }
+    if (elem)
+        startSendDataFrameExchange(elem->frame, 0, AC_LEGACY);
 }
 
 void DfraUpperMac::sendAck(Ieee80211DataOrMgmtFrame *frame)

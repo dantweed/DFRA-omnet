@@ -145,20 +145,21 @@ void DfraMgmtAP::sendManagementFrame(Ieee80211ManagementFrame *frame, const MACA
     sendDown(frame);
 }
 
-void DfraMgmtAP::setSchedule(Sched *newSchedule)
-{
+void DfraMgmtAP::setSchedule(Sched *newSchedule)//Placeholder parameter for future external scheduler
+{                                           //temporary, only passing nullptr for now, see FIXME comment in next functions
     if (!schedule)
         schedule = new Sched;
 
-
+    schedule->beaconReference = simTime();
     //Build schedule (will eventually be done through an interface)
     if (!staList.empty()) {
         schedule->numStations = staList.size();
         delete schedule->staSchedules;
+        //Double check that schedules are being set up correctly
         schedule->staSchedules = new BYTE[schedule->numStations];
         int i = 0;
-        for (; i < schedule->numStations; i++) {
-            schedule->staSchedules[i] = (BYTE)((i+1) % 255);
+        for (; i < schedule->numStations; ++i) {
+            schedule->staSchedules[i] = (BYTE)(1 << i);
         }
         schedule->size = sizeof(int)+sizeof(BYTE)*(i+1);
         schedule->frameTypes = 0xaa;
@@ -166,17 +167,15 @@ void DfraMgmtAP::setSchedule(Sched *newSchedule)
     } else {
         schedule->frameTypes = 0xff;
     }
-    //temporary, only passing nullptr for now, see FIXME comment in next functions
-    if (newSchedule != nullptr) {
-        mySchedule->mysched = (BYTE)newSchedule->apSchedule;
-        mySchedule->frameTypes = newSchedule->frameTypes;
-    }
-    else {
-        mySchedule->mysched = (BYTE) 0xFF;
-        mySchedule->frameTypes = schedule->frameTypes;
-    }
 
-    mySchedule->aid = -1; //-1 used for AP
+    mySchedule->aid = -1;     //-1 used for AP
+    mySchedule->mysched = (BYTE)0x01;
+    mySchedule->frameTypes = schedule->frameTypes;
+    mySchedule->beaconReference = schedule->beaconReference;
+    mySchedule->drbLength = beaconInterval/schedule->numDRBs;
+
+
+
     cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
     msg->setContextPointer(mySchedule);
     send(msg, "macOut");

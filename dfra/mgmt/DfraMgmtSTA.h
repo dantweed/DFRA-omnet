@@ -63,17 +63,22 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     using BYTE =  uint8;
 
     struct Sched {
-        int numStations = 0;
         BYTE frameTypes = 0;
         BYTE *staSchedules = nullptr;
+        simtime_t beaconReference;
+        int numDRBs;
         Sched(){}
         ~Sched(){delete staSchedules;}
     };
 
-    struct SchedulingInfo {
-        int aid;
-        BYTE frameTypes;
-        BYTE mysched;
+    struct SchedulingInfo{
+            int aid;
+            BYTE frameTypes;
+            BYTE mysched;
+            simtime_t beaconReference;
+            simtime_t drbLength;
+            SchedulingInfo(){}
+            ~SchedulingInfo(){}
     };
 
     //
@@ -142,6 +147,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     DfraMgmtSTA() : host(nullptr), interfaceTable(nullptr), myIface(nullptr), numChannels(-1), isScanning(false), isAssociated(false), assocTimeoutMsg(nullptr) {}
 
   protected:
+    void processSchedule(Sched *schedule) ;
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
 
