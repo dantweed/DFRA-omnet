@@ -77,6 +77,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
             BYTE mysched;
             simtime_t beaconReference;
             simtime_t drbLength;
+            int numDRBs;
             SchedulingInfo(){}
             ~SchedulingInfo(){}
     };
@@ -145,9 +146,9 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
 
   public:
     DfraMgmtSTA() : host(nullptr), interfaceTable(nullptr), myIface(nullptr), numChannels(-1), isScanning(false), isAssociated(false), assocTimeoutMsg(nullptr) {}
-
+    virtual ~DfraMgmtSTA();
   protected:
-    void processSchedule(Sched *schedule) ;
+    //void processSchedule(Sched *schedule) ;
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
 

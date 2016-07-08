@@ -86,6 +86,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
                 BYTE mysched;
                 simtime_t beaconReference;
                 simtime_t drbLength;
+                int numDRBs;
                 SchedulingInfo(){}
                 ~SchedulingInfo(){}
         };

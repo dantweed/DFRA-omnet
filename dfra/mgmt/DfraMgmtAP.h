@@ -89,6 +89,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
             BYTE mysched;
             simtime_t beaconReference;
             simtime_t drbLength;
+            int numDRBs;
             SchedulingInfo(){}
             ~SchedulingInfo(){}
     };

@@ -42,6 +42,7 @@ namespace ieee80211 {
 
 #define MSG_CHANGE_SCHED 99
 #define ST_FRAME_EXCHANGE 1
+#define DRB_UPDATE 2
 
 Define_Module(DfraUpperMac);
 
@@ -123,6 +124,8 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 {
     if (msg->getKind() == ST_FRAME_EXCHANGE) //DRB scheduling control
         frameExchange->start();
+    else if (msg->getKind() == DRB_UPDATE) //DRB number tracking within the frame
+        currDRBnum++;
     else if (msg->getContextPointer() != nullptr)
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
     else
@@ -132,8 +135,16 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 void DfraUpperMac::scheduleUpdate(cMessage *msg)
 {
     if (msg->getKind() == MSG_CHANGE_SCHED) {
-        currDRBnum = 0;
         mySchedule = (SchedulingInfo*)msg->getContextPointer();
+        currDRBnum = floor((simTime() - mySchedule->beaconReference)/(simtime_t)mySchedule->drbLength);
+
+        //Schedule DBR # changes (easier than storing all the times.. though may want to change later)
+        for (int i = currDRBnum+1; i < mySchedule->numDRBs; i++) {
+            simtime_t nextDRB = mySchedule->beaconReference + ((int)i)*mySchedule->drbLength;
+            cMessage *msg =new cMessage("timeout", DRB_UPDATE);
+            take(msg);
+            scheduleAt(nextDRB,msg);
+        }
         delete(msg);
     }
     else
@@ -298,17 +309,25 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
     bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
 
-    if (utils->isBroadcastOrMulticast(frame))
+    if (utils->isBroadcastOrMulticast(frame)) {
         frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
-    else if (useRtsCts)
-        frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
-    else
-        frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
+        frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
+    }
+    else {
+        if (useRtsCts)
+            frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
+        else
+            frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
 
     //DT: Need to figure out best way to do this w/o blocking (as that would screw up the simulation
-    //    while (simTime() < nextTxOp){}
-    scheduleAt(mySchedule->beaconReference+currDRBnum*mySchedule->drbLength , new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
-    //frameExchange->start();
+    //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
+
+    simtime_t nextTxOp = mySchedule->beaconReference + ((int)currDRBnum+1)*mySchedule->drbLength;
+    if(simTime() > nextTxOp) //We're ahead and sometime has gone wrong.. FIXME
+        nextTxOp = mySchedule->beaconReference + ((int)mySchedule->numDRBs+1)*mySchedule->drbLength;
+    scheduleAt(nextTxOp, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
+    }
+
 }
 
 

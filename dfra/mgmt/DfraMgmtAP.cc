@@ -51,6 +51,8 @@ static std::ostream& operator<<(std::ostream& os, const DfraMgmtAP::STAInfo& sta
 DfraMgmtAP::~DfraMgmtAP()
 {
     cancelAndDelete(beaconTimer);
+    if (schedule) delete schedule;
+    if (mySchedule) delete mySchedule;
 }
 
 void DfraMgmtAP::initialize(int stage)
@@ -113,7 +115,6 @@ void DfraMgmtAP::handleUpperMessage(cPacket *msg)
             return;
         }
     }
-
     sendDown(frame);
 }
 
@@ -165,21 +166,21 @@ void DfraMgmtAP::setSchedule(Sched *newSchedule)//Placeholder parameter for futu
         schedule->frameTypes = 0xaa;
 
     } else {
-        schedule->frameTypes = 0xff;
+        //all drbs are RA, need to correct/update these values at some point
+        schedule->frameTypes = (BYTE)0xff;
+        schedule->staSchedules = new BYTE;
+        *schedule->staSchedules = (BYTE)0xff;
     }
 
     mySchedule->aid = -1;     //-1 used for AP
     mySchedule->mysched = (BYTE)0x01;
     mySchedule->frameTypes = schedule->frameTypes;
     mySchedule->beaconReference = schedule->beaconReference;
-    mySchedule->drbLength = beaconInterval/schedule->numDRBs;
-
-
-
+    mySchedule->numDRBs = schedule->numDRBs;
+    mySchedule->drbLength = beaconInterval/(int)schedule->numDRBs;
     cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
     msg->setContextPointer(mySchedule);
     send(msg, "macOut");
-
 }
 
 void DfraMgmtAP::sendBeacon()
