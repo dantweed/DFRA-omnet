@@ -813,41 +813,59 @@ void DfraMgmtSTA::handleDisassociationFrame(Ieee80211DisassociationFrame *frame)
 }
 
 void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
-{
-    EV << "Received Beacon frame\n";
+{//FIXME: This is really badly written and needs to be redone (for clarity, if nothing else)
+
+    //EV << "Received Beacon frame\n";
     Ieee80211BeaconFrameBody& body = frame->getBody();
     storeAPInfo(frame->getTransmitterAddress(), body);
 
     //Extract scheduling info
     Sched *schedule = ((Sched*)frame->getAddedFields());
 
-    // if it is out associate AP, restart beacon timeout
+    // if it is our associate AP, restart beacon timeout
     if (isAssociated && frame->getTransmitterAddress() == assocAP.address) {
         EV << "Beacon is from associated AP, restarting beacon timeout timer\n";
         ASSERT(assocAP.beaconTimeoutMsg != nullptr);
         cancelEvent(assocAP.beaconTimeoutMsg);
-        scheduleAt(simTime() + MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
-
+        scheduleAt(simTime() + 1.5 * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
+        delete mySchedule;
+        mySchedule = new SchedulingInfo();
         mySchedule->aid = assocAP.aid;
         mySchedule->mysched = (BYTE)schedule->staSchedules[assocAP.aid-1];
         mySchedule->drbLength = assocAP.beaconInterval/(int)schedule->numDRBs;
-
+        mySchedule->numDRBs = schedule->numDRBs;
+        mySchedule->frameTypes = schedule->frameTypes;
+        mySchedule->beaconReference = schedule->beaconReference;
         //APInfo *ap = lookupAP(frame->getTransmitterAddress());
         //ASSERT(ap!=nullptr);
-    } else {
+
+        EV << "Assoc: Rec'd beacon " << mySchedule->beaconReference << "\n";
+        //Send schedule to  MAC layer if changed
+        cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
+        msg->setSchedulingPriority(0);
+        msg->setContextPointer(mySchedule);
+        send(msg, "macOut");
+
+    } else if (!isAssociated){ //Not yet associated
+        delete mySchedule;
+        mySchedule = new SchedulingInfo();
         mySchedule->mysched = (BYTE)0x80;
-        mySchedule->drbLength = body.getBeaconInterval()/(int)schedule->numDRBs;;
+        mySchedule->drbLength = body.getBeaconInterval()/(int)schedule->numDRBs;
+        mySchedule->numDRBs = schedule->numDRBs;
+        mySchedule->frameTypes = schedule->frameTypes;
+        mySchedule->beaconReference = schedule->beaconReference;
+        EV << "Not Assoc: Rec'd beacon " << mySchedule->beaconReference << "\n";
+        //Send schedule to  MAC layer if changed
+        cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
+        msg->setSchedulingPriority(0);
+        msg->setContextPointer(mySchedule);
+        send(msg, "macOut");
+    } else { //Associated and beacon is not from our AP
+        //Do nothing ... ?
     }
-    mySchedule->numDRBs = schedule->numDRBs;
-    mySchedule->frameTypes = schedule->frameTypes;
-    mySchedule->beaconReference = schedule->beaconReference;
 
     delete frame;
 
-    //Send to MAC layer
-    cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
-    msg->setContextPointer(mySchedule);
-    send(msg, "macOut");
 }
 
 void DfraMgmtSTA::handleProbeRequestFrame(Ieee80211ProbeRequestFrame *frame)
@@ -883,7 +901,7 @@ void DfraMgmtSTA::storeAPInfo(const MACAddress& address, const Ieee80211BeaconFr
     //XXX where to get this from?
     //ap->rxPower = ...
 }
-void DfraMgmtSTA::finish() {delete mySchedule;}
+void DfraMgmtSTA::finish() { if (mySchedule) delete mySchedule;}
 } // namespace ieee80211
 
 } // namespace inet

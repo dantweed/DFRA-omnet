@@ -171,7 +171,8 @@ void DfraMgmtAP::setSchedule(Sched *newSchedule)//Placeholder parameter for futu
         schedule->staSchedules = new BYTE;
         *schedule->staSchedules = (BYTE)0xff;
     }
-
+    delete mySchedule;
+    mySchedule = new SchedulingInfo;
     mySchedule->aid = -1;     //-1 used for AP
     mySchedule->mysched = (BYTE)0x01;
     mySchedule->frameTypes = schedule->frameTypes;
@@ -190,7 +191,7 @@ void DfraMgmtAP::sendBeacon()
     setSchedule(nullptr);
 
 
-    EV << "Sending beacon\n";
+    EV << "Sending beacon " << schedule->beaconReference << "\n";
     Ieee80211BeaconFrame *frame = new Ieee80211BeaconFrame("Beacon");
     Ieee80211BeaconFrameBody& body = frame->getBody();
     body.setSSID(ssid.c_str());

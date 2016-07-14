@@ -80,7 +80,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
             int numStations = 0;
             int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);
             Sched(){}
-            ~Sched(){delete staSchedules;}
+            ~Sched(){if (staSchedules) delete staSchedules;}
         };
 
     struct SchedulingInfo{

@@ -42,7 +42,6 @@ namespace ieee80211 {
 
 #define MSG_CHANGE_SCHED 99
 #define ST_FRAME_EXCHANGE 1
-#define DRB_UPDATE 2
 
 Define_Module(DfraUpperMac);
 
@@ -124,8 +123,6 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 {
     if (msg->getKind() == ST_FRAME_EXCHANGE) //DRB scheduling control
         frameExchange->start();
-    else if (msg->getKind() == DRB_UPDATE) //DRB number tracking within the frame
-        currDRBnum++;
     else if (msg->getContextPointer() != nullptr)
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
     else
@@ -136,20 +133,10 @@ void DfraUpperMac::scheduleUpdate(cMessage *msg)
 {
     if (msg->getKind() == MSG_CHANGE_SCHED) {
         mySchedule = (SchedulingInfo*)msg->getContextPointer();
-        currDRBnum = floor((simTime() - mySchedule->beaconReference)/(simtime_t)mySchedule->drbLength);
-
-        //Schedule DBR # changes (easier than storing all the times.. though may want to change later)
-        for (int i = currDRBnum+1; i < mySchedule->numDRBs; i++) {
-            simtime_t nextDRB = mySchedule->beaconReference + ((int)i)*mySchedule->drbLength;
-            cMessage *msg =new cMessage("timeout", DRB_UPDATE);
-            take(msg);
-            scheduleAt(nextDRB,msg);
-        }
-        delete(msg);
+        delete msg;
     }
     else
         ASSERT(false);
-
 }
 
 void DfraUpperMac:: upperFrameReceived(cPacket *msg)
@@ -319,18 +306,27 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         else
             frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
 
-    //DT: Need to figure out best way to do this w/o blocking (as that would screw up the simulation
-    //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
+        //DT: WOW! That's crappy programming !
+        // Need to figure out best way to do this w/o blocking (as that would screw up the simulation
+        //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
+        simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
+        while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
+             mySchedule->beaconReference += beaconInterval;
+        }
 
-    simtime_t nextTxOp = mySchedule->beaconReference + ((int)currDRBnum+1)*mySchedule->drbLength;
-    if(simTime() > nextTxOp) //We're ahead and sometime has gone wrong.. FIXME
-        nextTxOp = mySchedule->beaconReference + ((int)mySchedule->numDRBs+1)*mySchedule->drbLength;
-    scheduleAt(nextTxOp, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
+        int currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
+        if (currDRBnum > mySchedule->numDRBs) {
+            mySchedule->beaconReference += beaconInterval;
+            currDRBnum = 0;
+        }
+        simtime_t nextTxOp = mySchedule->beaconReference + ((int)currDRBnum+1)*mySchedule->drbLength;
+        //We're ahead and sometime has gone wrong..
+        if(simTime() > nextTxOp || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxOp)
+            nextTxOp = mySchedule->beaconReference + ((int)mySchedule->numDRBs+1)*mySchedule->drbLength;
+
+        scheduleAt(nextTxOp, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
     }
-
 }
-
-
 
 //DT: Edited to use queue to store for retransmission, now need to track retry attempts (may need to use different object in the queue
 void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
