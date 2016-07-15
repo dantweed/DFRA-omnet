@@ -24,6 +24,7 @@
 #include "IFrameExchange.h"
 #include "AccessCategory.h"
 #include "inet/physicallayer/ieee80211/mode/IIeee80211Mode.h"
+#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
 
 using namespace inet::physicallayer;
 
@@ -37,7 +38,7 @@ class Ieee80211Mac;
 class Ieee80211RTSFrame;
 class IMacQoSClassifier;
 class IMacParameters;
-class MacUtils;
+class DfraMacUtils;
 class ITx;
 class IContention;
 class IDuplicateDetector;
@@ -50,9 +51,7 @@ class IStatistics;
 class DfraMac;
 class DfraContention;
 
-/**
- * UpperMac for DCF mode.
- */
+
 class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected IFrameExchange::IFinishedCallback
 {
     public:
@@ -60,7 +59,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
 
     protected:
         IMacParameters *params = nullptr;
-        MacUtils *utils = nullptr;
+        DfraMacUtils *utils = nullptr;
         DfraMac *mac = nullptr;
         IRx *rx = nullptr;
         ITx *tx = nullptr;
@@ -94,7 +93,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
 
         int currDRBnum = 0;
 
-        struct txElem :cObject {
+        struct txElem : cObject {
             int retryNumber;;
             Ieee80211DataOrMgmtFrame *frame;
             txElem(int retries, Ieee80211DataOrMgmtFrame *frame_) {
@@ -102,7 +101,6 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
                 frame =  frame_;
             }
         };
-
     protected:
         void initialize() override;
         virtual IMacParameters *extractParameters(const IIeee80211Mode *slowestMandatoryMode);

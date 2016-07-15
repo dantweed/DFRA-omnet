@@ -25,7 +25,7 @@
 #include "IRx.h"
 #include "IMacParameters.h"
 #include "IStatistics.h"
-#include "MacUtils.h"
+#include <DfraMacUtils.h>
 #include "Ieee80211Frame_m.h"
 
 using namespace inet::utils;

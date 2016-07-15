@@ -17,13 +17,14 @@
 // Author: Andras Varga
 //
 
+#include <DfraMacUtils.h>
+#include "MacUtils.h"
 #include "DfraUpperMac.h"
 #include "DfraMac.h"
 #include "Ieee80211Mac.h"
 #include "IRx.h"
 #include "IContention.h"
 #include "ITx.h"
-#include "MacUtils.h"
 #include "MacParameters.h"
 #include "dfra/mac/FrameExchanges.h"
 #include "DuplicateDetectors.h"
@@ -34,7 +35,7 @@
 #include "inet/common/INETUtils.h"
 #include "inet/common/queue/IPassiveQueue.h"
 #include "inet/common/ModuleAccess.h"
-#include "inet/linklayer/ieee80211/mac/Ieee80211Frame_m.h"
+
 #include "inet/physicallayer/ieee80211/mode/Ieee80211ModeSet.h"
 
 namespace inet {
@@ -58,6 +59,9 @@ DfraUpperMac::~DfraUpperMac()
     delete params;
     delete utils;
     delete [] contention;
+    while (!transmissionQueue.isEmpty()) {
+        transmissionQueue.pop();
+    }
 }
 
 void DfraUpperMac::initialize()
@@ -70,18 +74,18 @@ void DfraUpperMac::initialize()
 
     maxQueueSize = par("maxQueueSize"); //14 per parameters currently
     transmissionQueue.setName("txQueue");
-    transmissionQueue.setup(par("prioritizeMulticast") ? (CompareFunc)MacUtils::cmpMgmtOverMulticastOverUnicast : (CompareFunc)MacUtils::cmpMgmtOverData);
+    transmissionQueue.setup(par("prioritizeMulticast") ? (CompareFunc)DfraMacUtils::cmpMgmtOverMulticastOverUnicast : (CompareFunc)DfraMacUtils::cmpMgmtOverData);
 
     rateSelection = check_and_cast<IRateSelection*>(getModuleByPath(par("rateSelectionModule")));
     rateControl = dynamic_cast<IRateControl*>(getModuleByPath(par("rateControlModule"))); // optional module
     rateSelection->setRateControl(rateControl);
 
     params = extractParameters(rateSelection->getSlowestMandatoryMode());
-    utils = new MacUtils(params, rateSelection);
+    utils = new DfraMacUtils(params, rateSelection);
     rx->setAddress(params->getAddress());
 
     statistics = check_and_cast<IStatistics*>(getModuleByPath(par("statisticsModule")));
-    statistics->setMacUtils(utils);
+    statistics->setMacUtils((MacUtils*)utils);
     statistics->setRateControl(rateControl);
 
     duplicateDetection = new NonQoSDuplicateDetector(); //TODO or LegacyDuplicateDetector();
@@ -111,11 +115,11 @@ IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMan
     params->setSifsTime(fallback(par("sifsTime"), referenceMode->getSifsTime()));
     int aCwMin = referenceMode->getLegacyCwMin();
     int aCwMax = referenceMode->getLegacyCwMax();
-    params->setAifsTime(AC_LEGACY, fallback(par("difsTime"), referenceMode->getSifsTime() + MacUtils::getAifsNumber(AC_LEGACY) * params->getSlotTime()));
+    params->setAifsTime(AC_LEGACY, fallback(par("difsTime"), referenceMode->getSifsTime() + DfraMacUtils::getAifsNumber(AC_LEGACY) * params->getSlotTime()));
     params->setEifsTime(AC_LEGACY, params->getSifsTime() + params->getAifsTime(AC_LEGACY) + slowestMandatoryMode->getDuration(LENGTH_ACK));
-    params->setCwMin(AC_LEGACY, fallback(par("cwMin"), MacUtils::getCwMin(AC_LEGACY, aCwMin)));
-    params->setCwMax(AC_LEGACY, fallback(par("cwMax"), MacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
-    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), MacUtils::getCwMin(AC_LEGACY, aCwMin)));
+    params->setCwMin(AC_LEGACY, fallback(par("cwMin"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
+    params->setCwMax(AC_LEGACY, fallback(par("cwMax"), DfraMacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
+    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
     return params;
 }
 
@@ -285,6 +289,35 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
     else
         utils->setFrameMode(frame, rateSelection->getModeForUnicastDataOrMgmtFrame(frame));
 
+    //Transmission details
+    //DT: WOW! This looks crappy, break out into another function, or something.. sheesh!!!
+            // Need to figure out best way to do this w/o blocking (as that would screw up the simulation
+            //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
+    simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
+    while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
+         mySchedule->beaconReference += beaconInterval;
+    }
+
+    int currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
+    if (currDRBnum > mySchedule->numDRBs) {
+        mySchedule->beaconReference += beaconInterval;
+        currDRBnum = 0;
+    }
+    simtime_t nextTxOp = mySchedule->beaconReference + ((int)currDRBnum+1)*mySchedule->drbLength;
+    //We're ahead and sometime has gone wrong..
+    if (simTime() > nextTxOp || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxOp)
+        ASSERT(false);
+
+    //Do I really want to use params?? Need to set ifs min to be something like 50 us, but
+//
+    ((MacParameters *)params)->setAifsTime(AC_LEGACY, SimTime(50,SIMTIME_US));
+    ((MacParameters *)params)->setCwMin(AC_LEGACY, 1);
+//    params->setCwMax(AC_LEGACY, fallback(par("cwMax"), DfraMacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
+//    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
+//
+
+
+
     FrameExchangeContext context;
     context.ownerModule = this;
     context.params = params;  //Change DIFS and backoff slots (CWmax/min) here as needed
@@ -305,24 +338,6 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
             frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
         else
             frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
-
-        //DT: WOW! That's crappy programming !
-        // Need to figure out best way to do this w/o blocking (as that would screw up the simulation
-        //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
-        simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
-        while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
-             mySchedule->beaconReference += beaconInterval;
-        }
-
-        int currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
-        if (currDRBnum > mySchedule->numDRBs) {
-            mySchedule->beaconReference += beaconInterval;
-            currDRBnum = 0;
-        }
-        simtime_t nextTxOp = mySchedule->beaconReference + ((int)currDRBnum+1)*mySchedule->drbLength;
-        //We're ahead and sometime has gone wrong..
-        if(simTime() > nextTxOp || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxOp)
-            nextTxOp = mySchedule->beaconReference + ((int)mySchedule->numDRBs+1)*mySchedule->drbLength;
 
         scheduleAt(nextTxOp, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
     }

@@ -113,8 +113,8 @@ void DfraContention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, i
     this->retryCount = retryCount;
     this->callback = callback;
 
-    int cw = computeCw(cwMin, cwMax, retryCount);
-    backoffSlots = intrand(cw + 1); //DT: Change to deterministic from higher levels (not hard)
+    //int cw = computeCw(cwMin, cwMax, retryCount);
+    backoffSlots = cwMin;//intrand(cw + 1); //DT: Change to deterministic from higher levels (not hard)
 
 #ifdef NS3_VALIDATION
     static const char *AC[] = {"AC_BE", "AC_BK", "AC_VI", "AC_VO"};

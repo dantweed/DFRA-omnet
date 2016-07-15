@@ -59,18 +59,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     // Stores DFRA scheduling info
     //
     using BYTE =  uint8;
-    //DT:TODO: This seems cobbled together, needs to be cleaned up on the process of storing AP schedule
-//    struct Sched {
-//        Sched(){}
-//        ~Sched(){delete staSchedules;}
-//        int numStations = 0;
-//        BYTE frameTypes = 0;
-//        BYTE *staSchedules = nullptr;
-//        int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);
-//        BYTE apSchedule = 0;
-//        simtime_t beaconReference;
-//    };
-//
+
     struct Sched {
             BYTE frameTypes = 0;
             BYTE *staSchedules = nullptr;

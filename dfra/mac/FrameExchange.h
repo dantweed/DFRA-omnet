@@ -29,7 +29,7 @@ namespace inet {
 namespace ieee80211 {
 
 class IMacParameters;
-class MacUtils;
+class DfraMacUtils;
 class ITx;
 class IContention;
 class IRx;
@@ -43,7 +43,7 @@ class INET_API FrameExchangeContext
     public:
         cSimpleModule *ownerModule = nullptr;
         IMacParameters *params = nullptr;
-        MacUtils *utils = nullptr;
+        DfraMacUtils *utils = nullptr;
         ITx *tx = nullptr;
         IContention **contention = nullptr;
         IRx *rx = nullptr;
@@ -57,7 +57,7 @@ class INET_API FrameExchange : public MacPlugin, public IFrameExchange, public I
 {
     protected:
         IMacParameters *params;
-        MacUtils *utils;
+        DfraMacUtils *utils;
         ITx *tx;
         IContention **contention;
         IRx *rx;
