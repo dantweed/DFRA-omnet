@@ -512,7 +512,9 @@ void DfraMgmtAP::stop()
 void DfraMgmtAP::finish()
 {
     if (schedule) delete schedule;
+    schedule = nullptr;
     if (mySchedule) delete mySchedule;
+    mySchedule = nullptr;
 }
 
 //} // namespace dfra

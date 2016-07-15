@@ -95,11 +95,12 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
 
         struct txElem : cObject {
             int retryNumber;;
-            Ieee80211DataOrMgmtFrame *frame;
+            Ieee80211DataOrMgmtFrame *frame = nullptr;
             txElem(int retries, Ieee80211DataOrMgmtFrame *frame_) {
                 retryNumber = retries;
                 frame =  frame_;
             }
+            ~txElem() { if (frame) delete frame; }
         };
     protected:
         void initialize() override;

@@ -59,8 +59,9 @@ DfraUpperMac::~DfraUpperMac()
     delete params;
     delete utils;
     delete [] contention;
+    //might or might not need to deal with deleting the queue and/or elements ...
     while (!transmissionQueue.isEmpty()) {
-        transmissionQueue.pop();
+        delete transmissionQueue.pop();
     }
 }
 
@@ -125,8 +126,10 @@ IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMan
 
 void DfraUpperMac::handleMessage(cMessage *msg)
 {
-    if (msg->getKind() == ST_FRAME_EXCHANGE) //DRB scheduling control
+    if (msg->getKind() == ST_FRAME_EXCHANGE) {//DRB scheduling control
         frameExchange->start();
+        delete msg;
+    }
     else if (msg->getContextPointer() != nullptr)
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
     else

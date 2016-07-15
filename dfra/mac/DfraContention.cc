@@ -280,16 +280,18 @@ void DfraContention::scheduleTransmissionRequest()
 
     simtime_t now = simTime();
     bool useEifs = endEifsTime > now + ifs;
+    ASSERT(!useEifs);
+
     simtime_t waitInterval = (useEifs ? eifs : ifs) + backoffSlots * slotTime;
 
-    if (backoffOptimization && fsm.getState() == IDLE) {
+/*    if (backoffOptimization && fsm.getState() == IDLE) {
         // we can pretend the frame has arrived into the queue a little bit earlier, and may be able to start transmitting immediately
         simtime_t elapsedFreeChannelTime = now - lastChannelBusyTime;
         simtime_t elapsedIdleTime = now - lastIdleStartTime;
         backoffOptimizationDelta = std::min(waitInterval, std::min(elapsedFreeChannelTime, elapsedIdleTime));
         if (backoffOptimizationDelta > SIMTIME_ZERO)
             waitInterval -= backoffOptimizationDelta;
-    }
+    }*/
     scheduledTransmissionTime = now + waitInterval;
     scheduleTransmissionRequestFor(scheduledTransmissionTime);
 }
