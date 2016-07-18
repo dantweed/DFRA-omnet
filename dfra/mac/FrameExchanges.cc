@@ -147,7 +147,7 @@ SendDataWithAckFrameExchange::SendDataWithAckFrameExchange(FrameExchangeContext 
 
 SendDataWithAckFrameExchange::~SendDataWithAckFrameExchange()
 {
-    delete dataFrame;
+    //delete dataFrame; //DT moved deletion to upper mac
 }
 
 std::string SendDataWithAckFrameExchange::info() const
@@ -267,7 +267,7 @@ SendDataWithRtsCtsFrameExchange::SendDataWithRtsCtsFrameExchange(FrameExchangeCo
 
 SendDataWithRtsCtsFrameExchange::~SendDataWithRtsCtsFrameExchange()
 {
-    delete dataFrame;
+    //delete dataFrame; //DT moved deletion to upper mac
 }
 
 std::string SendDataWithRtsCtsFrameExchange::info() const
@@ -358,7 +358,7 @@ SendMulticastDataFrameExchange::SendMulticastDataFrameExchange(FrameExchangeCont
 
 SendMulticastDataFrameExchange::~SendMulticastDataFrameExchange()
 {
-    delete dataFrame; //DT: Moved deletion of frame to upperMac
+    //delete dataFrame; //DT: Moved deletion of frame to upperMac
 }
 
 std::string SendMulticastDataFrameExchange::info() const

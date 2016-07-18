@@ -220,6 +220,11 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
         updateDisplayString();
 }
 
+void DfraContention::dfraFail(){
+    handleWithFSM(MEDIUM_STATE_CHANGED,nullptr);
+
+}
+
 void DfraContention::mediumStateChanged(bool mediumFree)
 {
     Enter_Method_Silent(mediumFree ? "medium FREE" : "medium BUSY");

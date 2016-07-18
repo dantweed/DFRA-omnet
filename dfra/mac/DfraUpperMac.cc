@@ -60,9 +60,6 @@ DfraUpperMac::~DfraUpperMac()
     delete utils;
     delete [] contention;
     //might or might not need to deal with deleting the queue and/or elements ...
-    while (!transmissionQueue.isEmpty()) {
-        delete transmissionQueue.pop();
-    }
 }
 
 void DfraUpperMac::initialize()
@@ -273,8 +270,8 @@ void DfraUpperMac::channelAccessGranted(IContentionCallback *callback, int txInd
 void DfraUpperMac::internalCollision(IContentionCallback *callback, int txIndex)
 {
     Enter_Method("internalCollision()");
-    if (callback)
-        callback->internalCollision(txIndex);
+    /*if (callback)
+        callback->internalCollision(txIndex);*/ //DT - no collision controller ..
 }
 
 void DfraUpperMac::transmissionComplete(ITxCallback *callback)
@@ -293,7 +290,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         utils->setFrameMode(frame, rateSelection->getModeForUnicastDataOrMgmtFrame(frame));
 
     //Transmission details
-    //DT: WOW! This looks crappy, break out into another function, or something.. sheesh!!!
+    //DT: WOW!
             // Need to figure out best way to do this w/o blocking (as that would screw up the simulation
             //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
     simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
@@ -314,10 +311,10 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
     //Do I really want to use params?? Need to set ifs min to be something like 50 us, but
 //
     ((MacParameters *)params)->setAifsTime(AC_LEGACY, SimTime(50,SIMTIME_US));
-    ((MacParameters *)params)->setCwMin(AC_LEGACY, 1);
+    ((MacParameters *)params)->setCwMin(AC_LEGACY, 0);
 //    params->setCwMax(AC_LEGACY, fallback(par("cwMax"), DfraMacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
-//    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
-//
+   ((MacParameters *)params)->setCwMulticast(AC_LEGACY, 1);
+
 
 
 
@@ -350,20 +347,27 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
 {//DT: TODO: rewrite this so it is more logical (!successful first, to eliminate duplicate lines of code for checking if tx queue is empty
     EV_INFO << "Frame exchange finished" << std::endl;
-    //Ieee80211DataOrMgmtFrame *frame = nullptr;
+
     txElem *elem = nullptr;
     if (successful) {
-        transmissionQueue.pop();
+        elem = check_and_cast<txElem *>(transmissionQueue.pop());
+        delete elem;
+        elem = nullptr;
         if (!transmissionQueue.isEmpty())
             elem = check_and_cast<txElem *>(transmissionQueue.front());
-            //frame = check_and_cast<Ieee80211DataOrMgmtFrame *>(transmissionQueue.front());//.pop())
     }
     else {
-        elem = new txElem(*(check_and_cast<txElem *>(transmissionQueue.pop())));
-        if (elem->retryNumber++ > params->getShortRetryLimit()) { //Drop after retry limit (not RTS/CTS supported yet)
+        elem = check_and_cast<txElem *>(transmissionQueue.front());
+        if (++elem->retryNumber > params->getShortRetryLimit()) { //Drop after retry limit (not RTS/CTS supported yet)
+            elem = check_and_cast<txElem *>(transmissionQueue.pop());
             delete elem;
+            elem = nullptr;
             if (!transmissionQueue.isEmpty())
                 elem = check_and_cast<txElem *>(transmissionQueue.front());
+        } else {
+            Ieee80211DataOrMgmtFrame *frame = new Ieee80211DataOrMgmtFrame(*elem->frame);
+            delete (elem->frame);
+            elem->frame = frame;
         }
     }
     delete frameExchange;

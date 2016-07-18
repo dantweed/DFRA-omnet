@@ -91,6 +91,8 @@ class INET_API DfraContention : public cSimpleModule, public IContention, protec
         virtual void updateDisplayString();
         const char *getEventName(EventType event);
 
+        void dfraFail();
+
     public:
         DfraContention() {}
         ~DfraContention();
