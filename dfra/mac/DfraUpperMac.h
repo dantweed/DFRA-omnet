@@ -100,7 +100,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
                 retryNumber = retries;
                 frame =  frame_;
             }
-            ~txElem() { }
+            ~txElem() {if (frame) delete frame; }
         };
     protected:
         void initialize() override;

@@ -50,6 +50,7 @@ netanim-trace.txt
 *.out
 gcc-debug
 
+*.elog
 # ignore backup and temp files
 *.UPDATED
 *.FAILED
