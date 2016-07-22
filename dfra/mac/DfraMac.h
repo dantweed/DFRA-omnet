@@ -21,7 +21,7 @@
 #define __DFRAMAC_H
 
 // uncomment this if you do not want to log state machine transitions
-#define FSM_DEBUG
+//#define FSM_DEBUG
 
 #include <list>
 

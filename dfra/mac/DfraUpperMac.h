@@ -80,17 +80,26 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         //For scheduling info //DT
         using BYTE = uint8;
         struct SchedulingInfo{
-                int aid;
-                BYTE frameTypes;
-                BYTE mysched;
-                simtime_t beaconReference;
-                simtime_t drbLength;
-                int numDRBs;
-                SchedulingInfo(){}
-                ~SchedulingInfo(){}
+            int aid;
+            BYTE *frameTypes;
+            BYTE *mysched;
+            simtime_t beaconReference;
+            simtime_t drbLength;
+            int numDRBs;
+
+            SchedulingInfo(int _numDRBs){
+                numDRBs = _numDRBs;
+                mysched = new BYTE[numDRBs/2]; //One nibble per DRB, read left to right
+                frameTypes = new BYTE[(int)ceil(numDRBs/8)];
+            }
+            ~SchedulingInfo(){
+                if (mysched) delete mysched;
+                if (frameTypes) delete frameTypes;
+                mysched = nullptr;
+                frameTypes = nullptr;
+            }
         };
         SchedulingInfo *mySchedule;
-
         int currDRBnum = 0;
 
         struct txElem : cObject {

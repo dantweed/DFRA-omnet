@@ -113,11 +113,22 @@ IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMan
     params->setSifsTime(fallback(par("sifsTime"), referenceMode->getSifsTime()));
     int aCwMin = referenceMode->getLegacyCwMin();
     int aCwMax = referenceMode->getLegacyCwMax();
-    params->setAifsTime(AC_LEGACY, fallback(par("difsTime"), referenceMode->getSifsTime() + DfraMacUtils::getAifsNumber(AC_LEGACY) * params->getSlotTime()));
+
+    //DT: A/DIFS only used for gaurd interval wtih slotted scheduling
+    /*params->setAifsTime(AC_LEGACY, fallback(par("difsTime"), referenceMode->getSifsTime() + DfraMacUtils::getAifsNumber(AC_LEGACY) * params->getSlotTime()));
     params->setEifsTime(AC_LEGACY, params->getSifsTime() + params->getAifsTime(AC_LEGACY) + slowestMandatoryMode->getDuration(LENGTH_ACK));
     params->setCwMin(AC_LEGACY, fallback(par("cwMin"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
     params->setCwMax(AC_LEGACY, fallback(par("cwMax"), DfraMacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
-    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
+    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));*/
+
+    //Changes for DFRA
+    params->setAifsTime(AC_LEGACY, SimTime(50,SIMTIME_US));  //FIXME: should this be 25 us .... ?
+    params->setEifsTime(AC_LEGACY, params->getAifsTime(AC_LEGACY));   //We're not concerned with EIFS at this point may want to add back in at a later time
+    params->setCwMin(AC_LEGACY, 1); //Default to 1, will be dynamically set later
+    //Redundant, I know, but I don't want to change the interface
+    params->setCwMax(AC_LEGACY,params->getCwMin(AC_LEGACY));
+    params->setCwMulticast(AC_LEGACY,params->getCwMin(AC_LEGACY));
+
     return params;
 }
 
@@ -270,8 +281,8 @@ void DfraUpperMac::channelAccessGranted(IContentionCallback *callback, int txInd
 void DfraUpperMac::internalCollision(IContentionCallback *callback, int txIndex)
 {
     Enter_Method("internalCollision()");
-    /*if (callback)
-        callback->internalCollision(txIndex);*/ //DT - no collision controller ..
+    if (callback)
+        callback->internalCollision(txIndex); //DT - no collision controller ..
 }
 
 void DfraUpperMac::transmissionComplete(ITxCallback *callback)
@@ -284,15 +295,12 @@ void DfraUpperMac::transmissionComplete(ITxCallback *callback)
 void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
 {
     ASSERT(!frameExchange);
-    if (utils->isBroadcastOrMulticast(frame))
+    bool broadOrMulticast = utils->isBroadcastOrMulticast(frame);
+    if (broadOrMulticast)
         utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
     else
         utils->setFrameMode(frame, rateSelection->getModeForUnicastDataOrMgmtFrame(frame));
 
-    //Transmission details
-    //DT: WOW!
-            // Need to figure out best way to do this w/o blocking (as that would screw up the simulation
-            //    while (simTime() < nextTxOp){}  //ALSO: Eventually, make this not deal with mgmt frames (esp. beacons)
     simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
     while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
          mySchedule->beaconReference += beaconInterval;
@@ -308,15 +316,9 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
     if (simTime() > nextTxOp || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxOp)
         ASSERT(false);
 
-    //Do I really want to use params?? Need to set ifs min to be something like 50 us, but
-//
-    ((MacParameters *)params)->setAifsTime(AC_LEGACY, SimTime(50,SIMTIME_US));
+    //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
     ((MacParameters *)params)->setCwMin(AC_LEGACY, 0);
-//    params->setCwMax(AC_LEGACY, fallback(par("cwMax"), DfraMacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
-   ((MacParameters *)params)->setCwMulticast(AC_LEGACY, 1);
-
-
-
+    ((MacParameters *)params)->setCwMulticast(AC_LEGACY, 1);
 
     FrameExchangeContext context;
     context.ownerModule = this;
@@ -329,7 +331,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
     bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
 
-    if (utils->isBroadcastOrMulticast(frame)) {
+    if (broadOrMulticast) {
         frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
         frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
     }

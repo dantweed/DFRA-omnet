@@ -113,6 +113,9 @@ void DfraContention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, i
     this->retryCount = retryCount;
     this->callback = callback;
 
+    if (retryCount >1)
+        int rtt= retryCount;
+
     //int cw = computeCw(cwMin, cwMax, retryCount);
     backoffSlots = cwMin;//intrand(cw + 1); //DT: Change to deterministic from higher levels (not hard)
 
@@ -279,11 +282,9 @@ void DfraContention::scheduleTransmissionRequest()
     ASSERT(mediumFree);
 
     simtime_t now = simTime();
-    bool useEifs = endEifsTime > now + ifs;
-    ASSERT(!useEifs);
-
-    simtime_t waitInterval = (useEifs ? eifs : ifs) + backoffSlots * slotTime;
-
+    bool useEifs = endEifsTime > now + ifs;//Dropped EIFS for more predictability
+    simtime_t waitInterval = (ifs) + backoffSlots * slotTime;
+//DT
 /*    if (backoffOptimization && fsm.getState() == IDLE) {
         // we can pretend the frame has arrived into the queue a little bit earlier, and may be able to start transmitting immediately
         simtime_t elapsedFreeChannelTime = now - lastChannelBusyTime;

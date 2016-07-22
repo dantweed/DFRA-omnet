@@ -69,8 +69,6 @@ void DfraMgmtAP::initialize(int stage)
         channelNumber = -1;    // value will arrive from physical layer in receiveChangeNotification()
         nextAID = 1;
 
-        mySchedule = new SchedulingInfo;
-
         WATCH(ssid);
         WATCH(channelNumber);
         WATCH(beaconInterval);
@@ -146,38 +144,49 @@ void DfraMgmtAP::sendManagementFrame(Ieee80211ManagementFrame *frame, const MACA
     sendDown(frame);
 }
 
-void DfraMgmtAP::setSchedule(Sched *newSchedule)//Placeholder parameter for future external scheduler
-{                                           //temporary, only passing nullptr for now, see FIXME comment in next functions
-    if (!schedule)
-        schedule = new Sched;
+void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future external scheduler
+{
+    if (schedule) {
+        delete schedule;
+        schedule = nullptr;
+    }
 
-    schedule->beaconReference = simTime();
-    //Build schedule (will eventually be done through an interface)
+
+    schedule = new Schedule(8, staList.size());
+    int numDRBs = schedule->numDRBs; // temporarily static
+    //Build schedule (will eventually be done externally)
     if (!staList.empty()) {
-        schedule->numStations = staList.size();
-        delete schedule->staSchedules;
-        //Double check that schedules are being set up correctly
-        schedule->staSchedules = new BYTE[schedule->numStations];
-        int i = 0;
-        for (; i < schedule->numStations; ++i) {
-            schedule->staSchedules[i] = (BYTE)(1 << i);
+        //Temporarily setting schedules manually
+        for (int i = 0; i < schedule->numStations; i++) { //over each user
+            for (int j = 0; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
+                //bytewise schedule setting, from left to right using aid as BI multiplier, alternating which DRB
+                schedule->staSchedules[j] = (BYTE)(((j+i)%2 == 0) ? i << 4 : i );
+            }
         }
-        schedule->size = sizeof(int)+sizeof(BYTE)*(i+1);
-        schedule->frameTypes = 0xaa;
+
+        //For now, leave all drbs FA
+        for (int i = numDRBs; i != 0; floor(i/=8))
+            schedule->frameTypes[i] = (BYTE)0x00;
 
     } else {
-        //all drbs are RA, need to correct/update these values at some point
-        schedule->frameTypes = (BYTE)0xff;
-        schedule->staSchedules = new BYTE;
-        *schedule->staSchedules = (BYTE)0xff;
+        //all drbs are RA, no associations, so no scheduling, stations *will* know this
+        for (int i = numDRBs; i != 0; floor(i/=8))
+            schedule->frameTypes[i] = (BYTE)0xff;
     }
-    delete mySchedule;
-    mySchedule = new SchedulingInfo;
+
+    schedule->beaconReference = simTime();
+
+    //Send down AP schedule
+    if (mySchedule) {
+        delete mySchedule;
+        mySchedule = nullptr;
+    }
+
+    mySchedule = new SchedulingInfo(schedule->numDRBs);
     mySchedule->aid = -1;     //-1 used for AP
-    mySchedule->mysched = (BYTE)0x01;
+    mySchedule->mysched = schedule->apSchedule;
     mySchedule->frameTypes = schedule->frameTypes;
     mySchedule->beaconReference = schedule->beaconReference;
-    mySchedule->numDRBs = schedule->numDRBs;
     mySchedule->drbLength = beaconInterval/(int)schedule->numDRBs;
     cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
     msg->setContextPointer(mySchedule);
@@ -187,7 +196,7 @@ void DfraMgmtAP::setSchedule(Sched *newSchedule)//Placeholder parameter for futu
 void DfraMgmtAP::sendBeacon()
 {
     //FIXME: will be called externally, and this will revert back to only building the beacon from existing values
-    //          may cause issues if values are changing from external sources while this function is executing... consider
+    //          Ensure volatility/mutex is respected, as may cause issues if values are changing from external sources while this function is executing
     setSchedule(nullptr);
 
 

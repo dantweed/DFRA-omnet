@@ -58,30 +58,61 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     //
     // Stores DFRA scheduling info
     //
-    using BYTE =  uint8;
+    using BYTE = uint8;
 
-    struct Sched {
-            BYTE frameTypes = 0;
-            BYTE *staSchedules = nullptr;
+    //Global schedule, eventually to be passed to setSchedule in DfraMgmtAP
+    struct Schedule {
+            BYTE *frameTypes;
+            BYTE *staSchedules;
+
             simtime_t beaconReference;
-            int numDRBs = 8; //Default, but may need to be variable in the future
-            BYTE apSchedule = 0;
-            int numStations = 0;
-            int size = sizeof(numStations)+sizeof(BYTE)+numStations*sizeof(BYTE);
-            Sched(){}
-            ~Sched(){if (staSchedules) delete staSchedules; staSchedules = nullptr;}
-        };
+            int numDRBs;
 
+            BYTE *apSchedule;   //For now, I am assuming that the AP will be scheduled this way by the external scheduler since it does not need to transmit this schedule
+            int numStations;
+            int size = 0;
+
+            Schedule(int _numDRBs, int _numStations){
+                numDRBs = _numDRBs;
+                numStations = _numStations;
+                frameTypes = new BYTE[(int)ceil(numDRBs/8)];
+                apSchedule = new BYTE[numDRBs/2];
+                if (numStations != 0)
+                    staSchedules = new BYTE[numDRBs*numStations/2]; //always an integer as we for numDRBs to be a power of two
+                else
+                    staSchedules = nullptr;
+                size = 3*sizeof(int)+sizeof(simtime_t)+(ceil(numDRBs/8)+numDRBs/2+numDRBs*numStations/2)*sizeof(BYTE);
+            }
+            ~Schedule(){
+                if (staSchedules) delete staSchedules;
+                if (frameTypes) delete frameTypes;
+                if (apSchedule) delete apSchedule;
+                staSchedules = nullptr;
+                frameTypes = nullptr;
+                apSchedule = nullptr;
+            }
+        };
+    //Station schedule
     struct SchedulingInfo{
             int aid;
-            BYTE frameTypes;
-            BYTE mysched;
+            BYTE *frameTypes;
+            BYTE *mysched;
             simtime_t beaconReference;
             simtime_t drbLength;
             int numDRBs;
-            SchedulingInfo(){}
-            ~SchedulingInfo(){}
-    };
+
+            SchedulingInfo(int _numDRBs){
+                numDRBs = _numDRBs;
+                mysched = new BYTE[numDRBs/2]; //One nibble per DRB, read left to right
+                frameTypes = new BYTE[(int)ceil(numDRBs/8)];
+            }
+            ~SchedulingInfo(){
+                if (mysched) delete mysched;
+                if (frameTypes) delete frameTypes;
+                mysched = nullptr;
+                frameTypes = nullptr;
+            }
+        };
 
     class NotificationInfoSta : public cObject
     {
@@ -116,8 +147,8 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
     const int MAXAID = 2007;
 
     //ADDED: Schedule info
-    Sched *schedule;
-    SchedulingInfo *mySchedule;
+    Schedule *schedule = nullptr;
+    SchedulingInfo *mySchedule = nullptr;
 
     // state
     STAList staList;    ///< list of STAs
@@ -130,7 +161,7 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
   protected:
 
     //FIXME: ACtually implement external scheduling, with a scheduler interface, defined objects, etc
-    void setSchedule(Sched *schedule);
+    void setSchedule(Schedule *schedule);
 
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int) override;

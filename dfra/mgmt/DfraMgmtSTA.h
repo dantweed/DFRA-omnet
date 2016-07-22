@@ -62,25 +62,43 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     //
     using BYTE =  uint8;
 
-    struct Sched {
-        BYTE frameTypes = 0;
+    struct Sched {  //truncated version of the AP schedule
+        BYTE *frameTypes = nullptr;
         BYTE *staSchedules = nullptr;
         simtime_t beaconReference;
         int numDRBs;
         Sched(){}
-        ~Sched(){delete staSchedules;}
+        ~Sched(){
+             if (staSchedules) delete staSchedules;
+             if (frameTypes) delete frameTypes;
+             staSchedules = nullptr;
+             frameTypes = nullptr;
+         }
     };
 
+    //Station schedule
     struct SchedulingInfo{
-            int aid;
-            BYTE frameTypes;
-            BYTE mysched;
-            simtime_t beaconReference;
-            simtime_t drbLength;
-            int numDRBs;
-            SchedulingInfo(){}
-            ~SchedulingInfo(){}
+        int aid =-1;
+        BYTE *frameTypes;
+        BYTE *mysched;
+        simtime_t beaconReference;
+        simtime_t drbLength;
+        int numDRBs;
+
+        SchedulingInfo(int _numDRBs){
+            numDRBs = _numDRBs;
+            mysched = new BYTE[numDRBs/2]; //One nibble per DRB, read left to right
+            frameTypes = new BYTE[(int)ceil(numDRBs/8)];
+        }
+        ~SchedulingInfo(){
+            if (mysched) delete mysched;
+            if (frameTypes) delete frameTypes;
+            mysched = nullptr;
+            frameTypes = nullptr;
+        }
     };
+
+
 
     //
     // Stores AP info received during scanning
@@ -142,7 +160,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     AssociatedAPInfo assocAP;
 
     //ADDED: Schedule info //DT
-    SchedulingInfo *mySchedule;
+    SchedulingInfo *mySchedule = nullptr;
 
   public:
     DfraMgmtSTA() : host(nullptr), interfaceTable(nullptr), myIface(nullptr), numChannels(-1), isScanning(false), isAssociated(false), assocTimeoutMsg(nullptr) {}

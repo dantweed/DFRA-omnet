@@ -2,7 +2,7 @@
 # OMNeT++/OMNEST Makefile for DFRA
 #
 # This file was generated with the command:
-#  opp_makemake -f --deep -O out -I../inet/src -I../inet/src/inet/linklayer/ieee80211/mac -L../inet/out/$$\(CONFIGNAME\)/src -lINET -DINET_IMPORT -KINET_PROJ=../inet
+#  opp_makemake -f --deep -O out -I../inet/src -I../inet/src/inet/linklayer/ieee80211/mac -L../inet/out/$$\(CONFIGNAME\)/src -lINET -KINET_PROJ=../inet
 #
 
 # Name of target to be created (-o option)
@@ -88,7 +88,7 @@ include $(CONFIGFILE)
 OMNETPP_LIB_SUBDIR = $(OMNETPP_LIB_DIR)/$(TOOLCHAIN_NAME)
 OMNETPP_LIBS = -L"$(OMNETPP_LIB_SUBDIR)" -L"$(OMNETPP_LIB_DIR)" -loppmain$D $(USERIF_LIBS) $(KERNEL_LIBS) $(SYS_LIBS)
 
-COPTS = $(CFLAGS) -DINET_IMPORT $(INCLUDE_PATH) -I$(OMNETPP_INCL_DIR)
+COPTS = $(CFLAGS)  $(INCLUDE_PATH) -I$(OMNETPP_INCL_DIR)
 MSGCOPTS = $(INCLUDE_PATH)
 SMCOPTS =
 
@@ -557,6 +557,7 @@ $O/dfra/mgmt/DfraMgmtAP.o: dfra/mgmt/DfraMgmtAP.cc \
 	$(INET_PROJ)/src/inet/common/INETMath.h \
 	$(INET_PROJ)/src/inet/common/IVisitor.h \
 	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/common/IntervalTree.h \
 	$(INET_PROJ)/src/inet/common/ModuleAccess.h \
 	$(INET_PROJ)/src/inet/common/NotifierConsts.h \
 	$(INET_PROJ)/src/inet/common/Units.h \
@@ -574,8 +575,10 @@ $O/dfra/mgmt/DfraMgmtAP.o: dfra/mgmt/DfraMgmtAP.cc \
 	$(INET_PROJ)/src/inet/common/mapping/MappingBase.h \
 	$(INET_PROJ)/src/inet/common/mapping/MappingUtils.h \
 	$(INET_PROJ)/src/inet/environment/common/Material.h \
+	$(INET_PROJ)/src/inet/environment/contract/IGround.h \
 	$(INET_PROJ)/src/inet/environment/contract/IMaterial.h \
 	$(INET_PROJ)/src/inet/environment/contract/IMaterialRegistry.h \
+	$(INET_PROJ)/src/inet/environment/contract/IObjectCache.h \
 	$(INET_PROJ)/src/inet/environment/contract/IPhysicalEnvironment.h \
 	$(INET_PROJ)/src/inet/environment/contract/IPhysicalObject.h \
 	$(INET_PROJ)/src/inet/features.h \
@@ -614,11 +617,14 @@ $O/dfra/mgmt/DfraMgmtAP.o: dfra/mgmt/DfraMgmtAP.cc \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IAntenna.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IArrival.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IBackgroundNoise.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ICommunicationCache.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IErrorModel.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IInterference.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListening.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListeningDecision.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IMediumLimitCache.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IModulation.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/INeighborCache.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/INoise.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IObstacleLoss.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPathLoss.h \
@@ -655,6 +661,7 @@ $O/dfra/mgmt/DfraMgmtSTA.o: dfra/mgmt/DfraMgmtSTA.cc \
 	$(INET_PROJ)/src/inet/common/INETUtils.h \
 	$(INET_PROJ)/src/inet/common/IVisitor.h \
 	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/common/IntervalTree.h \
 	$(INET_PROJ)/src/inet/common/ModuleAccess.h \
 	$(INET_PROJ)/src/inet/common/NotifierConsts.h \
 	$(INET_PROJ)/src/inet/common/Units.h \
@@ -669,8 +676,10 @@ $O/dfra/mgmt/DfraMgmtSTA.o: dfra/mgmt/DfraMgmtSTA.cc \
 	$(INET_PROJ)/src/inet/common/mapping/MappingBase.h \
 	$(INET_PROJ)/src/inet/common/mapping/MappingUtils.h \
 	$(INET_PROJ)/src/inet/environment/common/Material.h \
+	$(INET_PROJ)/src/inet/environment/contract/IGround.h \
 	$(INET_PROJ)/src/inet/environment/contract/IMaterial.h \
 	$(INET_PROJ)/src/inet/environment/contract/IMaterialRegistry.h \
+	$(INET_PROJ)/src/inet/environment/contract/IObjectCache.h \
 	$(INET_PROJ)/src/inet/environment/contract/IPhysicalEnvironment.h \
 	$(INET_PROJ)/src/inet/environment/contract/IPhysicalObject.h \
 	$(INET_PROJ)/src/inet/features.h \
@@ -697,10 +706,13 @@ $O/dfra/mgmt/DfraMgmtSTA.o: dfra/mgmt/DfraMgmtSTA.cc \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IAntenna.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IArrival.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IBackgroundNoise.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/ICommunicationCache.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IInterference.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListening.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IListeningDecision.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IMediumLimitCache.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IModulation.h \
+	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/INeighborCache.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/INoise.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IObstacleLoss.h \
 	$(INET_PROJ)/src/inet/physicallayer/contract/packetlevel/IPathLoss.h \

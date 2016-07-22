@@ -112,8 +112,6 @@ void DfraMgmtSTA::initialize(int stage)
         myIface = nullptr;
         numChannels = par("numChannels");
 
-        mySchedule = new SchedulingInfo(); //DT
-
         host = getContainingNode(this);
         host->subscribe(NF_LINK_FULL_PROMISCUOUS, this);
 
@@ -813,9 +811,8 @@ void DfraMgmtSTA::handleDisassociationFrame(Ieee80211DisassociationFrame *frame)
 }
 
 void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
-{//FIXME: This is really badly written and needs to be redone (for clarity, if nothing else)
+{//FIXME: Re-organize and test
 
-    //EV << "Received Beacon frame\n";
     Ieee80211BeaconFrameBody& body = frame->getBody();
     storeAPInfo(frame->getTransmitterAddress(), body);
 
@@ -823,45 +820,47 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
     Sched *schedule = ((Sched*)frame->getAddedFields());
 
     // if it is our associate AP, restart beacon timeout
-    if (isAssociated && frame->getTransmitterAddress() == assocAP.address) {
+    if ( (isAssociated && frame->getTransmitterAddress() == assocAP.address)  || !isAssociated) {
         EV << "Beacon is from associated AP, restarting beacon timeout timer\n";
-        ASSERT(assocAP.beaconTimeoutMsg != nullptr);
-        cancelEvent(assocAP.beaconTimeoutMsg);
-        scheduleAt(simTime() + 1.5 * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
-        delete mySchedule;
-        mySchedule = new SchedulingInfo();
-        mySchedule->aid = assocAP.aid;
-        mySchedule->mysched = (BYTE)schedule->staSchedules[assocAP.aid-1];
-        mySchedule->drbLength = assocAP.beaconInterval/(int)schedule->numDRBs;
-        mySchedule->numDRBs = schedule->numDRBs;
-        mySchedule->frameTypes = schedule->frameTypes;
+
+        if (mySchedule) delete mySchedule;
+        int numDRBs = (int)schedule->numDRBs;
+        mySchedule = new SchedulingInfo(schedule->numDRBs);
         mySchedule->beaconReference = schedule->beaconReference;
+        mySchedule->drbLength = body.getBeaconInterval()/numDRBs;  //if associated or not,  beacon interval can change
+
+        memcpy(mySchedule->frameTypes, schedule->frameTypes, ceil(numDRBs/8));
+
+        if (isAssociated) {
+            ASSERT(assocAP.beaconTimeoutMsg != nullptr);
+            cancelEvent(assocAP.beaconTimeoutMsg);
+            scheduleAt(simTime() + 1.5 * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
+            mySchedule->aid = assocAP.aid; //-1 if not associated, by default
+            memcpy(mySchedule->mysched, &schedule->staSchedules[(numDRBs/2)*(assocAP.aid-1)], (numDRBs/2));
+        } else {//Set to RA, for correct DRBS, giving priority to Demand assigned stations
+            if (!schedule->staSchedules) {//indicates AP has no associated stations, so all drbs are RA
+                for (int j = 0; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
+                    //bytewise schedule setting, from left to right using aid as BI multiplier, alternating which DRB
+                    mySchedule->mysched[j] = (BYTE)0x22;
+                }
+            } else  {//Limited to 1st and 4th DRB, should be RA by
+                mySchedule->mysched[0] = mySchedule->mysched[4] = (BYTE)0x22;
+            }
+        }
+
         //APInfo *ap = lookupAP(frame->getTransmitterAddress());
         //ASSERT(ap!=nullptr);
+        if (isAssociated) EV << "Assoc: Rec'd beacon " << mySchedule->beaconReference << "\n";
+        else EV <<"Not Assoc: Rec'd beacon "<< mySchedule->beaconReference << "\n";
 
-        EV << "Assoc: Rec'd beacon " << mySchedule->beaconReference << "\n";
-        //Send schedule to  MAC layer if changed
+        //Send schedule to  MAC layer
         cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
         msg->setSchedulingPriority(0);
         msg->setContextPointer(mySchedule);
         send(msg, "macOut");
 
-    } else if (!isAssociated){ //Not yet associated
-        delete mySchedule;
-        mySchedule = new SchedulingInfo();
-        mySchedule->mysched = (BYTE)0x80;
-        mySchedule->drbLength = body.getBeaconInterval()/(int)schedule->numDRBs;
-        mySchedule->numDRBs = schedule->numDRBs;
-        mySchedule->frameTypes = schedule->frameTypes;
-        mySchedule->beaconReference = schedule->beaconReference;
-        EV << "Not Assoc: Rec'd beacon " << mySchedule->beaconReference << "\n";
-        //Send schedule to  MAC layer if changed
-        cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
-        msg->setSchedulingPriority(0);
-        msg->setContextPointer(mySchedule);
-        send(msg, "macOut");
-    } else { //Associated and beacon is not from our AP
-        //Do nothing ... ?
+    }  else { //Associated and beacon is not from our AP
+        //Do nothing ... but I'm leaving this here as may want to do something later
     }
 
     delete frame;
