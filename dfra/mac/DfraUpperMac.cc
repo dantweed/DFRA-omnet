@@ -44,6 +44,8 @@ namespace ieee80211 {
 #define MSG_CHANGE_SCHED 99
 #define ST_FRAME_EXCHANGE 1
 
+#define MAX_BO 11
+
 Define_Module(DfraUpperMac);
 
 DfraUpperMac::DfraUpperMac()
@@ -292,56 +294,95 @@ void DfraUpperMac::transmissionComplete(ITxCallback *callback)
         callback->transmissionComplete();
 }
 
+
+//FIXME: Factor this function, this is ridiculously convoluted and poorly structured
 void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
 {
     ASSERT(!frameExchange);
     bool broadOrMulticast = utils->isBroadcastOrMulticast(frame);
-    if (broadOrMulticast)
-        utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
-    else
-        utils->setFrameMode(frame, rateSelection->getModeForUnicastDataOrMgmtFrame(frame));
-
-    simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
-    while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
-         mySchedule->beaconReference += beaconInterval;
-    }
+    simtime_t nextTxTime;
 
     int currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
+    uint8 nextTxDRB;
+    int backoff;
+    BYTE drbSched = 0;
+
+    //Check for missed beacon, if so so continue on with existing schedule
+    //FIXME: better missed beacon behavior
+
     if (currDRBnum > mySchedule->numDRBs) {
-        mySchedule->beaconReference += beaconInterval;
-        currDRBnum = 0;
+        simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
+        while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
+             mySchedule->beaconReference += beaconInterval;
+        }
+        currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
     }
-    simtime_t nextTxOp = mySchedule->beaconReference + ((int)currDRBnum+1)*mySchedule->drbLength;
-    //We're ahead and sometime has gone wrong..
-    if (simTime() > nextTxOp || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxOp)
-        ASSERT(false);
 
-    //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
-    ((MacParameters *)params)->setCwMin(AC_LEGACY, 0);
-    ((MacParameters *)params)->setCwMulticast(AC_LEGACY, 1);
-
-    FrameExchangeContext context;
-    context.ownerModule = this;
-    context.params = params;  //Change DIFS and backoff slots (CWmax/min) here as needed
-    context.utils = utils;
-    context.contention = contention;
-    context.tx = tx;
-    context.rx = rx;
-    context.statistics = statistics;
-
-    bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
-
-    if (broadOrMulticast) {
-        frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
-        frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
-    }
-    else {
-        if (useRtsCts)
-            frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
+    nextTxDRB = currDRBnum;
+    while (drbSched == 0 && nextTxDRB <  mySchedule->numDRBs) {
+        if (nextTxDRB % 2 ==0)
+            drbSched = (mySchedule->mysched[nextTxDRB/2] & 0xf0) >> 4;
         else
-            frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
+            drbSched = (mySchedule->mysched[(nextTxDRB-1)/2] & 0x0f);
+        if (!drbSched) nextTxDRB++;
+    }
 
-        scheduleAt(nextTxOp, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
+    if (drbSched != 0 && nextTxDRB <  mySchedule->numDRBs){ //Otherwise, wait until next beacon
+
+        BYTE frameType = ((mySchedule->frameTypes[mySchedule->aid -1] >> nextTxDRB) % 0x01);
+        if (frameType == 0) {
+            backoff = drbSched;
+        }else{
+            if (drbSched <= 0xB)
+                backoff = rand() % (MAX_BO-drbSched) + drbSched ;
+            else if (drbSched == 0xC)
+                backoff = rand() % (int)ceil(MAX_BO/2)+1;
+            else if (drbSched == 0xF)
+                backoff = MAX_BO  - (rand() % (int)ceil(MAX_BO/2)) ;
+            else
+                ASSERT(false);
+        }
+        ASSERT(backoff < MAX_BO);
+        nextTxTime = mySchedule->beaconReference + ((int)nextTxDRB)*mySchedule->drbLength;
+
+
+        //We're ahead and sometime has gone wrong so fail dramatically
+        if (simTime() > nextTxTime || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime)
+            ASSERT(false);
+
+        //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
+        ((MacParameters *)params)->setCwMin(AC_LEGACY, backoff);
+        ((MacParameters *)params)->setCwMulticast(AC_LEGACY, backoff);
+
+        //Set up actual frame exchance
+        if (broadOrMulticast)
+            utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
+        else
+            utils->setFrameMode(frame, rateSelection->getModeForUnicastDataOrMgmtFrame(frame));
+
+        FrameExchangeContext context;
+        context.ownerModule = this;
+        context.params = params;
+        context.utils = utils;
+        context.contention = contention;
+        context.tx = tx;
+        context.rx = rx;
+        context.statistics = statistics;
+
+        bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
+
+        if (broadOrMulticast) {
+            frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
+            frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
+        }
+        else {
+            if (useRtsCts)
+                frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
+            else
+                frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
+
+            scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
+        }
     }
 }
 

@@ -155,6 +155,7 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
     schedule = new Schedule(8, staList.size());
     int numDRBs = schedule->numDRBs; // temporarily static
     //Build schedule (will eventually be done externally)
+
     if (!staList.empty()) {
         //Temporarily setting schedules manually
         for (int i = 0; i < schedule->numStations; i++) { //over each user
@@ -170,9 +171,17 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
 
     } else {
         //all drbs are RA, no associations, so no scheduling, stations *will* know this
-        for (int i = numDRBs; i != 0; floor(i/=8))
-            schedule->frameTypes[i] = (BYTE)0xff;
+        int i =  numDRBs;
+        for (int j = 0; floor(i/8) != 0; i-=8)
+            schedule->frameTypes[j++] = (BYTE)0xff;
     }
+
+    //For now, just give the AP highest priority
+    for (int j = 0; j < numDRBs/2; j++) { //over each 4bit drb schedule, two nibbles at a time
+        //bytewise schedule setting, from left to right
+        schedule->apSchedule[j] = (BYTE)0x11;
+    }
+
 
     schedule->beaconReference = simTime();
 
