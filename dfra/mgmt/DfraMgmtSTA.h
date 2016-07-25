@@ -91,10 +91,10 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
             frameTypes = new BYTE[(int)ceil(numDRBs/8)];
         }
         ~SchedulingInfo(){
-            if (mysched) delete mysched;
+            /*if (mysched) delete mysched;
             if (frameTypes) delete frameTypes;
             mysched = nullptr;
-            frameTypes = nullptr;
+            frameTypes = nullptr;*/
         }
     };
 

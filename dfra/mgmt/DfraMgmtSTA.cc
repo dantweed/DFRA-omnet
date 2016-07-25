@@ -858,7 +858,8 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
         msg->setSchedulingPriority(0);
         msg->setContextPointer(mySchedule);
         send(msg, "macOut");
-
+        if (assocAP.aid > 1)
+            int a = 1;
     }  else { //Associated and beacon is not from our AP
         //Do nothing ... but I'm leaving this here as may want to do something later
     }

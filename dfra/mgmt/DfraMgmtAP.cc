@@ -161,19 +161,18 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
         for (int i = 0; i < schedule->numStations; i++) { //over each user
             for (int j = 0; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
                 //bytewise schedule setting, from left to right using aid as BI multiplier, alternating which DRB
-                schedule->staSchedules[j] = (BYTE)(((j+i)%2 == 0) ? i << 4 : i );
+                schedule->staSchedules[j+4*i] = (BYTE)(((j+i)%2 == 0) ? (i+1) << 4 : (i+1) );
             }
         }
 
         //For now, leave all drbs FA
-        for (int i = numDRBs; i != 0; floor(i/=8))
+        for (int i = 0; i*8 < numDRBs; i++)
             schedule->frameTypes[i] = (BYTE)0x00;
 
     } else {
         //all drbs are RA, no associations, so no scheduling, stations *will* know this
-        int i =  numDRBs;
-        for (int j = 0; floor(i/8) != 0; i-=8)
-            schedule->frameTypes[j++] = (BYTE)0xff;
+        for (int i = 0; i*8 < numDRBs; i++)
+            schedule->frameTypes[i] = (BYTE)0xff;
     }
 
     //For now, just give the AP highest priority
@@ -193,8 +192,13 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
 
     mySchedule = new SchedulingInfo(schedule->numDRBs);
     mySchedule->aid = -1;     //-1 used for AP
-    mySchedule->mysched = schedule->apSchedule;
-    mySchedule->frameTypes = schedule->frameTypes;
+
+   /* mySchedule->mysched = schedule->apSchedule;
+    mySchedule->frameTypes = schedule->frameTypes;*/
+
+    memcpy(mySchedule->frameTypes, schedule->frameTypes, ceil(numDRBs/8));
+    memcpy(mySchedule->mysched, schedule->apSchedule, (numDRBs/2));
+
     mySchedule->beaconReference = schedule->beaconReference;
     mySchedule->drbLength = beaconInterval/(int)schedule->numDRBs;
     cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);

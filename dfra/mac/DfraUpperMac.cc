@@ -301,8 +301,8 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
     ASSERT(!frameExchange);
     bool broadOrMulticast = utils->isBroadcastOrMulticast(frame);
     simtime_t nextTxTime;
-
-    int currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
+    simtime_t now = simTime();
+    int currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
     uint8 nextTxDRB;
     int backoff;
     BYTE drbSched = 0;
@@ -312,13 +312,13 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
     if (currDRBnum > mySchedule->numDRBs) {
         simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
-        while (simTime() > (mySchedule->beaconReference + beaconInterval) ){
+        while (now > (mySchedule->beaconReference + beaconInterval) ){
              mySchedule->beaconReference += beaconInterval;
         }
-        currDRBnum = floor((simTime() - mySchedule->beaconReference)/mySchedule->drbLength);
+        currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
     }
 
-    nextTxDRB = currDRBnum;
+    nextTxDRB = currDRBnum; //FIXME: May not be able to Tx during current DRB... have to check timing ...
     while (drbSched == 0 && nextTxDRB <  mySchedule->numDRBs) {
         if (nextTxDRB % 2 ==0)
             drbSched = (mySchedule->mysched[nextTxDRB/2] & 0xf0) >> 4;
@@ -329,7 +329,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
     if (drbSched != 0 && nextTxDRB <  mySchedule->numDRBs){ //Otherwise, wait until next beacon
 
-        BYTE frameType = ((mySchedule->frameTypes[mySchedule->aid -1] >> nextTxDRB) % 0x01);
+        BYTE frameType = ((mySchedule->frameTypes[(int)floor(nextTxDRB/8)] >> (8-nextTxDRB+1)) % 0x01);
         if (frameType == 0) {
             backoff = drbSched;
         }else{
@@ -347,8 +347,12 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
 
         //We're ahead and sometime has gone wrong so fail dramatically
-        if (simTime() > nextTxTime || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime)
-            ASSERT(false);
+        if (now > nextTxTime || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime) {
+            simtime_t problem = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength);
+            bool first = now > nextTxTime;
+            bool second = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime;
+            //ASSERT(false);
+        }
 
         //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
         ((MacParameters *)params)->setCwMin(AC_LEGACY, backoff);
@@ -380,8 +384,10 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
                 frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
             else
                 frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
-
-            scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
+            if (nextTxTime < now)
+                frameExchange->start();
+            else
+                scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
         }
     }
 }
