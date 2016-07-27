@@ -51,7 +51,7 @@ Define_Module(DfraMgmtSTA);
 #define MSG_CHANGE_SCHED          99
 
 
-#define MAX_BEACONS_MISSED        3.5  // beacon lost timeout, in beacon intervals (doesn't need to be integer)
+#define MAX_BEACONS_MISSED        1.5  // beacon lost timeout, in beacon intervals (doesn't need to be integer)
 
 std::ostream& operator<<(std::ostream& os, const DfraMgmtSTA::ScanningInfo& scanning)
 {
@@ -834,7 +834,7 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
         if (isAssociated) {
             ASSERT(assocAP.beaconTimeoutMsg != nullptr);
             cancelEvent(assocAP.beaconTimeoutMsg);
-            scheduleAt(simTime() + 1.5 * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
+            scheduleAt(simTime() + MAX_BEACONS_MISSED * assocAP.beaconInterval, assocAP.beaconTimeoutMsg);
             mySchedule->aid = assocAP.aid; //-1 if not associated, by default
             memcpy(mySchedule->mysched, &schedule->staSchedules[(numDRBs/2)*(assocAP.aid-1)], (numDRBs/2));
         } else {//Set to RA, for correct DRBS, giving priority to Demand assigned stations

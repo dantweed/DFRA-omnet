@@ -414,9 +414,9 @@ void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
             if (!transmissionQueue.isEmpty())
                 elem = check_and_cast<txElem *>(transmissionQueue.front());
         } else {
-            Ieee80211DataOrMgmtFrame *frame = new Ieee80211DataOrMgmtFrame(*elem->frame);
-            delete (elem->frame);
-            elem->frame = frame;
+            //Ieee80211DataOrMgmtFrame *frame = new Ieee80211DataOrMgmtFrame(*elem->frame);
+            //delete (elem->frame);
+            //elem->frame = frame;
         }
     }
     delete frameExchange;
