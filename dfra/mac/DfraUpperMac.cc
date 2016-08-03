@@ -318,9 +318,9 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
     }
 
-    nextTxDRB = currDRBnum; //FIXME: May not be able to Tx during current DRB... have to check timing ...
+    nextTxDRB = currDRBnum + 1; //FIXME: May not be able to Tx during current DRB... have to check timing ...
     while (drbSched == 0 && nextTxDRB <  mySchedule->numDRBs) {
-        if (nextTxDRB % 2 ==0)
+        if (nextTxDRB % 2 == 0)
             drbSched = (mySchedule->mysched[nextTxDRB/2] & 0xf0) >> 4;
         else
             drbSched = (mySchedule->mysched[(nextTxDRB-1)/2] & 0x0f);
@@ -342,7 +342,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
             else
                 ASSERT(false);
         }
-        ASSERT(backoff < MAX_BO);
+        ASSERT(backoff <= MAX_BO);
         nextTxTime = mySchedule->beaconReference + ((int)nextTxDRB)*mySchedule->drbLength;
 
 
@@ -351,14 +351,14 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
             simtime_t problem = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength);
             bool first = now > nextTxTime;
             bool second = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime;
-            //ASSERT(false);
+            ASSERT(false);
         }
 
         //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
         ((MacParameters *)params)->setCwMin(AC_LEGACY, backoff);
         ((MacParameters *)params)->setCwMulticast(AC_LEGACY, backoff);
 
-        //Set up actual frame exchance
+        //Set up actual frame exchange
         if (broadOrMulticast)
             utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
         else
@@ -377,7 +377,10 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
         if (broadOrMulticast) {
             frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
-            frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
+            if (frame->getType() == ST_BEACON || nextTxTime < now)
+                frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
+            else
+                scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
         }
         else {
             if (useRtsCts)

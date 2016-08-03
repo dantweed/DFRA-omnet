@@ -51,7 +51,7 @@ Define_Module(DfraMgmtSTA);
 #define MSG_CHANGE_SCHED          99
 
 
-#define MAX_BEACONS_MISSED        1.5  // beacon lost timeout, in beacon intervals (doesn't need to be integer)
+#define MAX_BEACONS_MISSED        3.5  // beacon lost timeout, in beacon intervals (doesn't need to be integer)
 
 std::ostream& operator<<(std::ostream& os, const DfraMgmtSTA::ScanningInfo& scanning)
 {

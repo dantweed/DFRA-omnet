@@ -159,7 +159,8 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
     if (!staList.empty()) {
         //Temporarily setting schedules manually
         for (int i = 0; i < schedule->numStations; i++) { //over each user
-            for (int j = 0; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
+            schedule->staSchedules[4*i] = (BYTE)0x00;
+            for (int j = 1; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
                 //bytewise schedule setting, from left to right using aid as BI multiplier, alternating which DRB
                 schedule->staSchedules[j+4*i] = (BYTE)(((j+i)%2 == 0) ? (i+1) << 4 : (i+1) );
             }
@@ -208,7 +209,7 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
 
 void DfraMgmtAP::sendBeacon()
 {
-    //FIXME: will be called externally, and this will revert back to only building the beacon from existing values
+    //FIXME:setSchedule will be called externally, and this will revert back to only building the beacon from existing values
     //          Ensure volatility/mutex is respected, as may cause issues if values are changing from external sources while this function is executing
     setSchedule(nullptr);
 
