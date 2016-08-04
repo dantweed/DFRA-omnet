@@ -67,9 +67,9 @@ class INET_API DfraMgmtAP : public Ieee80211MgmtAPBase, protected cListener
 
             simtime_t beaconReference;
             int numDRBs;
-
-            BYTE *apSchedule;   //For now, I am assuming that the AP will be scheduled this way by the external scheduler since it does not need to transmit this schedule
             int numStations;
+            BYTE *apSchedule;   //For now, I am assuming that the AP will be scheduled this way by the external scheduler since it does not need to transmit this schedule
+
             int size = 0;
 
             Schedule(int _numDRBs, int _numStations){

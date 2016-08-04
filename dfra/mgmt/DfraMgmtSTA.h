@@ -67,6 +67,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
         BYTE *staSchedules = nullptr;
         simtime_t beaconReference;
         int numDRBs;
+        int numStations;
         Sched(){}
         ~Sched(){
              if (staSchedules) delete staSchedules;
@@ -76,9 +77,10 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
          }
     };
 
+
     //Station schedule
     struct SchedulingInfo{
-        int aid =-1;
+        int aid =0;
         BYTE *frameTypes;
         BYTE *mysched;
         simtime_t beaconReference;
@@ -134,7 +136,7 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
         int aid;
         cMessage *beaconTimeoutMsg;
 
-        AssociatedAPInfo() : APInfo() { receiveSequence = 0; beaconTimeoutMsg = nullptr; aid = -1;}
+        AssociatedAPInfo() : APInfo() { receiveSequence = 0; beaconTimeoutMsg = nullptr; aid = 0;}
     };
 
   protected:

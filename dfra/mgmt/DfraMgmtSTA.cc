@@ -838,13 +838,15 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
             mySchedule->aid = assocAP.aid; //-1 if not associated, by default
             memcpy(mySchedule->mysched, &schedule->staSchedules[(numDRBs/2)*(assocAP.aid-1)], (numDRBs/2));
         } else {//Set to RA, for correct DRBS, giving priority to Demand assigned stations
-            if (!schedule->staSchedules) {//indicates AP has no associated stations, so all drbs are RA
+            if (schedule->numStations == 0) {//indicates AP has no associated stations, so all drbs are RA
                 for (int j = 0; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
                     //bytewise schedule setting, from left to right using aid as BI multiplier, alternating which DRB
-                    mySchedule->mysched[j] = (BYTE)0x22;
+                    mySchedule->mysched[j] = (BYTE)0x11;
                 }
-            } else  {//Limited to 1st and 4th DRB, should be RA by
-                mySchedule->mysched[0] = mySchedule->mysched[4] = (BYTE)0x22;
+            } else  {//Limited to low priority RA
+                for (int j = 0; j < numDRBs/2; j++)
+                    mySchedule->mysched[j] = (BYTE)0x55;
+
             }
         }
 
@@ -858,8 +860,7 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
         msg->setSchedulingPriority(0);
         msg->setContextPointer(mySchedule);
         send(msg, "macOut");
-        if (assocAP.aid > 1)
-            int a = 1;
+
     }  else { //Associated and beacon is not from our AP
         //Do nothing ... but I'm leaving this here as may want to do something later
     }

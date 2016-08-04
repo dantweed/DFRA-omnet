@@ -54,13 +54,13 @@ DfraUpperMac::DfraUpperMac()
 
 DfraUpperMac::~DfraUpperMac()
 {
-    delete frameExchange;
-    delete duplicateDetection;
-    delete fragmenter;
-    delete reassembly;
-    delete params;
-    delete utils;
-    delete [] contention;
+    //delete frameExchange;
+    //delete duplicateDetection;
+    //delete fragmenter;
+    //delete reassembly;
+    //delete params;
+    //delete utils;
+    //delete [] contention;
     //might or might not need to deal with deleting the queue and/or elements ...
 }
 
@@ -148,12 +148,23 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 
 void DfraUpperMac::scheduleUpdate(cMessage *msg)
 {
-    if (msg->getKind() == MSG_CHANGE_SCHED) {
-        mySchedule = (SchedulingInfo*)msg->getContextPointer();
-        delete msg;
-    }
+    ASSERT(msg->getKind() == MSG_CHANGE_SCHED);
+
+    SchedulingInfo* temp = (SchedulingInfo*)msg->getContextPointer();
+    if (!mySchedule)
+        mySchedule = new SchedulingInfo(temp->numDRBs);
     else
-        ASSERT(false);
+        mySchedule->numDRBs = temp->numDRBs;
+
+    //Deep copy schedule out of message
+    mySchedule->aid = temp->aid;
+    mySchedule->beaconReference = temp->beaconReference;
+    mySchedule->drbLength = temp->drbLength;
+    memcpy(mySchedule->frameTypes, temp->frameTypes, ceil(temp->numDRBs/8));
+    memcpy(mySchedule->mysched, temp->mysched, ceil(temp->numDRBs/2));
+    mySchedule->numDRBs = temp->numDRBs;
+    delete msg;
+
 }
 
 void DfraUpperMac:: upperFrameReceived(cPacket *msg)
@@ -224,7 +235,6 @@ void DfraUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
     Enter_Method("lowerFrameReceived(\"%s\")", frame->getName());
     delete frame->removeControlInfo();          //TODO
     take(frame);
-
     if (!utils->isForUs(frame)) {
         EV_INFO << "This frame is not for us" << std::endl;
         delete frame;
@@ -329,7 +339,10 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 
     if (drbSched != 0 && nextTxDRB <  mySchedule->numDRBs){ //Otherwise, wait until next beacon
 
-        BYTE frameType = ((mySchedule->frameTypes[(int)floor(nextTxDRB/8)] >> (8-nextTxDRB+1)) % 0x01);
+        BYTE frameTypes = mySchedule->frameTypes[(int)floor(nextTxDRB/8)];
+        int shift = 8-(nextTxDRB+1);
+        BYTE frameType = frameTypes >> shift;
+        frameType = frameType & 0x01;
         if (frameType == 0) {
             backoff = drbSched;
         }else{
