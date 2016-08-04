@@ -203,6 +203,7 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
     mySchedule->beaconReference = schedule->beaconReference;
     mySchedule->drbLength = beaconInterval/(int)schedule->numDRBs;
     cMessage *msg = new cMessage("changeSched", MSG_CHANGE_SCHED);
+    msg->setSchedulingPriority(0);
     msg->setContextPointer(mySchedule);
     send(msg, "macOut");
 }

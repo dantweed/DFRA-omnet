@@ -841,11 +841,12 @@ void DfraMgmtSTA::handleBeaconFrame(Ieee80211BeaconFrame *frame)
             if (schedule->numStations == 0) {//indicates AP has no associated stations, so all drbs are RA
                 for (int j = 0; j < numDRBs/2; j++){ //over each 4bit drb schedule, two nibbles at a time
                     //bytewise schedule setting, from left to right using aid as BI multiplier, alternating which DRB
-                    mySchedule->mysched[j] = (BYTE)0x11;
+                    mySchedule->mysched[j] = (BYTE)0x22;
                 }
             } else  {//Limited to low priority RA
-                for (int j = 0; j < numDRBs/2; j++)
-                    mySchedule->mysched[j] = (BYTE)0x55;
+                mySchedule->mysched[0] = mySchedule->mysched[4] = (BYTE)0x00;;
+                //for (int j = 0; j < numDRBs/2; j++)
+                    //mySchedule->mysched[j] = (BYTE)0x55;
 
             }
         }

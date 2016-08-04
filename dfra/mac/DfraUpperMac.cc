@@ -328,7 +328,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
     }
 
-    nextTxDRB = currDRBnum + 1; //FIXME: May not be able to Tx during current DRB... have to check timing ...
+    nextTxDRB = currDRBnum; //FIXME: May not be able to Tx during current DRB... have to check timing ...
     while (drbSched == 0 && nextTxDRB <  mySchedule->numDRBs) {
         if (nextTxDRB % 2 == 0)
             drbSched = (mySchedule->mysched[nextTxDRB/2] & 0xf0) >> 4;
@@ -358,14 +358,14 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         ASSERT(backoff <= MAX_BO);
         nextTxTime = mySchedule->beaconReference + ((int)nextTxDRB)*mySchedule->drbLength;
 
-
+//FIXME: Take into account current and time and total BO to see if next DRB is needed
         //We're ahead and sometime has gone wrong so fail dramatically
-        if (now > nextTxTime || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime) {
-            simtime_t problem = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength);
-            bool first = now > nextTxTime;
-            bool second = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime;
-            ASSERT(false);
-        }
+//        if (now > nextTxTime || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime) {
+//            simtime_t problem = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength);
+//            bool first = now > nextTxTime;
+//            bool second = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime;
+//            ASSERT(false);
+//        }
 
         //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
         ((MacParameters *)params)->setCwMin(AC_LEGACY, backoff);
@@ -387,6 +387,9 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         context.statistics = statistics;
 
         bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
+
+        if (frame->getType() == ST_AUTHENTICATION)
+            int a = 0;
 
         if (broadOrMulticast) {
             frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
