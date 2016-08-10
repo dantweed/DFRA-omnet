@@ -45,6 +45,7 @@ namespace ieee80211 {
 #define ST_FRAME_EXCHANGE 1
 
 #define MAX_BO 11
+#define BO_INT 9 //microseconds
 
 Define_Module(DfraUpperMac);
 
@@ -54,14 +55,14 @@ DfraUpperMac::DfraUpperMac()
 
 DfraUpperMac::~DfraUpperMac()
 {
-    //delete frameExchange;
-    //delete duplicateDetection;
-    //delete fragmenter;
-    //delete reassembly;
-    //delete params;
-    //delete utils;
-    //delete [] contention;
-    //might or might not need to deal with deleting the queue and/or elements ...
+    delete frameExchange;
+    delete duplicateDetection;
+    delete fragmenter;
+    delete reassembly;
+    delete params;
+    delete utils;
+    delete [] contention;
+
 }
 
 void DfraUpperMac::initialize()
@@ -116,20 +117,13 @@ IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMan
     int aCwMin = referenceMode->getLegacyCwMin();
     int aCwMax = referenceMode->getLegacyCwMax();
 
-    //DT: A/DIFS only used for gaurd interval wtih slotted scheduling
-    /*params->setAifsTime(AC_LEGACY, fallback(par("difsTime"), referenceMode->getSifsTime() + DfraMacUtils::getAifsNumber(AC_LEGACY) * params->getSlotTime()));
-    params->setEifsTime(AC_LEGACY, params->getSifsTime() + params->getAifsTime(AC_LEGACY) + slowestMandatoryMode->getDuration(LENGTH_ACK));
-    params->setCwMin(AC_LEGACY, fallback(par("cwMin"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));
-    params->setCwMax(AC_LEGACY, fallback(par("cwMax"), DfraMacUtils::getCwMax(AC_LEGACY, aCwMax, aCwMin)));
-    params->setCwMulticast(AC_LEGACY, fallback(par("cwMulticast"), DfraMacUtils::getCwMin(AC_LEGACY, aCwMin)));*/
-
     //Changes for DFRA
     params->setAifsTime(AC_LEGACY, SimTime(50,SIMTIME_US));  //FIXME: should this be 25 us .... ?
     params->setEifsTime(AC_LEGACY, params->getAifsTime(AC_LEGACY));   //We're not concerned with EIFS at this point may want to add back in at a later time
     params->setCwMin(AC_LEGACY, 1); //Default to 1, will be dynamically set later
-    //Redundant, I know, but I don't want to change the interface
-    params->setCwMax(AC_LEGACY,params->getCwMin(AC_LEGACY));
-    params->setCwMulticast(AC_LEGACY,params->getCwMin(AC_LEGACY));
+    //Redundant, but don't want to change the interface
+    params->setCwMax(AC_LEGACY,params->getCwMin(AC_LEGACY)); //Not actually used
+    params->setCwMulticast(AC_LEGACY,params->getCwMin(AC_LEGACY)); //Maintained as equal to CwMin
 
     return params;
 }
@@ -148,6 +142,7 @@ void DfraUpperMac::handleMessage(cMessage *msg)
 
 void DfraUpperMac::scheduleUpdate(cMessage *msg)
 {
+    Enter_Method_Silent();
     ASSERT(msg->getKind() == MSG_CHANGE_SCHED);
 
     SchedulingInfo* temp = (SchedulingInfo*)msg->getContextPointer();
@@ -156,42 +151,47 @@ void DfraUpperMac::scheduleUpdate(cMessage *msg)
     else
         mySchedule->numDRBs = temp->numDRBs;
 
-    //Deep copy schedule out of message
+    //Deep copy schedule out of the message
     mySchedule->aid = temp->aid;
     mySchedule->beaconReference = temp->beaconReference;
     mySchedule->drbLength = temp->drbLength;
     memcpy(mySchedule->frameTypes, temp->frameTypes, ceil(temp->numDRBs/8));
     memcpy(mySchedule->mysched, temp->mysched, ceil(temp->numDRBs/2));
     mySchedule->numDRBs = temp->numDRBs;
-    delete msg;
 
+    //Check if we have frames waiting for schedule update, and no current ongoing FrameExchange
+    if (!frameExchange && !transmissionQueue.isEmpty()) {
+        txElem *elem = check_and_cast<txElem *>(transmissionQueue.front());
+        startSendDataFrameExchange(elem->frame, 0, AC_LEGACY);
+    }
+    delete msg;
 }
 
 void DfraUpperMac:: upperFrameReceived(cPacket *msg)
 {
     Ieee80211DataOrMgmtFrame *frame = check_and_cast<Ieee80211DataOrMgmtFrame *>(msg);
     Enter_Method("upperFrameReceived(\"%s\")", frame->getName());
-        take(frame);
+    take(frame);
 
-        EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << endl;
+    EV_INFO << "Frame " << frame << " received from higher layer, receiver = " << frame->getReceiverAddress() << endl;
 
-        if (maxQueueSize > 0 && transmissionQueue.length() >= maxQueueSize && dynamic_cast<Ieee80211DataFrame *>(frame)) {
-            EV << "Dataframe " << frame << " received from higher layer but MAC queue is full, dropping\n";
-            delete frame;
-            return;
-        }
+    if (maxQueueSize > 0 && transmissionQueue.length() >= maxQueueSize && dynamic_cast<Ieee80211DataFrame *>(frame)) {
+        EV << "Dataframe " << frame << " received from higher layer but MAC queue is full, dropping\n";
+        delete frame;
+        return;
+    }
 
-        ASSERT(!frame->getReceiverAddress().isUnspecified());
-        frame->setTransmitterAddress(params->getAddress());
-        duplicateDetection->assignSequenceNumber(frame);
+    ASSERT(!frame->getReceiverAddress().isUnspecified());
+    frame->setTransmitterAddress(params->getAddress());
+    duplicateDetection->assignSequenceNumber(frame);
 
-        if (frame->getByteLength() <= fragmentationThreshold)
-            enqueue(frame);
-        else {
-            auto fragments = fragmenter->fragment(frame, fragmentationThreshold);
-            for (Ieee80211DataOrMgmtFrame *fragment : fragments)
-                enqueue(fragment);
-        }
+    if (frame->getByteLength() <= fragmentationThreshold)
+        enqueue(frame);
+    else {
+        auto fragments = fragmenter->fragment(frame, fragmentationThreshold);
+        for (Ieee80211DataOrMgmtFrame *fragment : fragments)
+            enqueue(fragment);
+    }
 }
 
 void DfraUpperMac::upperFrameReceived(Ieee80211DataOrMgmtFrame *frame)
@@ -229,7 +229,7 @@ void DfraUpperMac::enqueue(Ieee80211DataOrMgmtFrame *frame)
         startSendDataFrameExchange(elem->frame, 0, AC_LEGACY);
 }
 
-//DT: need to work on this to have DFRA conformity on association reqs/responses
+//FIXME: need to work on this to have DFRA conformity on association reqs/responses
 void DfraUpperMac::lowerFrameReceived(Ieee80211Frame *frame)
 {
     Enter_Method("lowerFrameReceived(\"%s\")", frame->getName());
@@ -294,7 +294,7 @@ void DfraUpperMac::internalCollision(IContentionCallback *callback, int txIndex)
 {
     Enter_Method("internalCollision()");
     if (callback)
-        callback->internalCollision(txIndex); //DT - no collision controller ..
+        callback->internalCollision(txIndex); //DT - no collision controller used as no internal QoS mechanisms yet
 }
 
 void DfraUpperMac::transmissionComplete(ITxCallback *callback)
@@ -304,74 +304,101 @@ void DfraUpperMac::transmissionComplete(ITxCallback *callback)
         callback->transmissionComplete();
 }
 
-
-//FIXME: Factor this function, this is ridiculously convoluted and poorly structured
-void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
-{
-    ASSERT(!frameExchange);
-    bool broadOrMulticast = utils->isBroadcastOrMulticast(frame);
+//FIXME: per notes in function
+simtime_t DfraUpperMac::setUpNextTx(){
     simtime_t nextTxTime;
     simtime_t now = simTime();
-    int currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
+    int currDRBnum;
     uint8 nextTxDRB;
     int backoff;
     BYTE drbSched = 0;
 
-    //Check for missed beacon, if so so continue on with existing schedule
-    //FIXME: better missed beacon behavior
+    //Determine what DRB we are currently in
+    currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
 
+    //Check for missed beacon, if so so continue on with existing schedule  //FIXME: better missed beacon behavior
     if (currDRBnum > mySchedule->numDRBs) {
         simtime_t beaconInterval = ((int)mySchedule->numDRBs)*mySchedule->drbLength;
+        //Adjust beacon reference to be within current DFRA frame
         while (now > (mySchedule->beaconReference + beaconInterval) ){
              mySchedule->beaconReference += beaconInterval;
         }
+        //Recalculate currDRBnum
         currDRBnum = floor((now - mySchedule->beaconReference)/mySchedule->drbLength);
+        ASSERT(currDRBnum <  mySchedule->numDRBs);
     }
 
-    nextTxDRB = currDRBnum; //FIXME: May not be able to Tx during current DRB... have to check timing ...
-    while (drbSched == 0 && nextTxDRB <  mySchedule->numDRBs) {
-        if (nextTxDRB % 2 == 0)
-            drbSched = (mySchedule->mysched[nextTxDRB/2] & 0xf0) >> 4;
-        else
-            drbSched = (mySchedule->mysched[(nextTxDRB-1)/2] & 0x0f);
-        if (!drbSched) nextTxDRB++;
-    }
+    //Assume can Tx during current DRB, and adjust if needed
+    nextTxDRB = currDRBnum;
+    bool done = false;
+    while (!done) {
 
-    if (drbSched != 0 && nextTxDRB <  mySchedule->numDRBs){ //Otherwise, wait until next beacon
-
-        BYTE frameTypes = mySchedule->frameTypes[(int)floor(nextTxDRB/8)];
-        int shift = 8-(nextTxDRB+1);
-        BYTE frameType = frameTypes >> shift;
-        frameType = frameType & 0x01;
-        if (frameType == 0) {
-            backoff = drbSched;
-        }else{
-            if (drbSched <= 0xB)
-                backoff = rand() % (MAX_BO-drbSched) + drbSched ;
-            else if (drbSched == 0xC)
-                backoff = rand() % (int)ceil(MAX_BO/2)+1;
-            else if (drbSched == 0xF)
-                backoff = MAX_BO  - (rand() % (int)ceil(MAX_BO/2)) ;
+        //Find the DRB schedule
+        while (drbSched == 0 && nextTxDRB <  mySchedule->numDRBs) {
+           if (nextTxDRB % 2 == 0)
+                drbSched = (mySchedule->mysched[nextTxDRB/2] & 0xf0) >> 4;
             else
-                ASSERT(false);
+                drbSched = (mySchedule->mysched[(nextTxDRB-1)/2] & 0x0f);
+            //If it's 0, cannot Tx during this DRB so try the next one as long as there are more DRB's in the frame
+            if (!drbSched) nextTxDRB++;
         }
-        ASSERT(backoff <= MAX_BO);
-        nextTxTime = mySchedule->beaconReference + ((int)nextTxDRB)*mySchedule->drbLength;
 
-//FIXME: Take into account current and time and total BO to see if next DRB is needed
-        //We're ahead and sometime has gone wrong so fail dramatically
-//        if (now > nextTxTime || (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime) {
-//            simtime_t problem = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength);
-//            bool first = now > nextTxTime;
-//            bool second = (mySchedule->beaconReference + ((int)mySchedule->numDRBs)*mySchedule->drbLength) < nextTxTime;
-//            ASSERT(false);
-//        }
+        simtime_t maxBOtime = mySchedule->beaconReference + ((int)nextTxDRB)*mySchedule->drbLength + ((int)MAX_BO)*SimTime(BO_INT,SIMTIME_US);
 
-        //Do I really want to use params?? Need to set ifs min to be something like 25us for guard interval, but
-        ((MacParameters *)params)->setCwMin(AC_LEGACY, backoff);
-        ((MacParameters *)params)->setCwMulticast(AC_LEGACY, backoff);
+        //If we found a DRB schedule before reaching the end of the frame, calculate backoff and set up
+        if (drbSched != 0 && nextTxDRB <  mySchedule->numDRBs){
 
-        //Set up actual frame exchange
+            BYTE frameTypes = mySchedule->frameTypes[(int)floor(nextTxDRB/8)];
+            int shift = 8-(nextTxDRB+1);
+            BYTE frameType = frameTypes >> shift;
+            frameType = frameType & 0x01;
+            if (frameType == 0) {
+                backoff = drbSched;
+            }else{
+                if (drbSched <= 0xB)
+                    backoff = rand() % (MAX_BO-drbSched) + drbSched ;
+                else if (drbSched == 0xC)
+                    backoff = rand() % (int)ceil(MAX_BO/2)+1;
+                else if (drbSched == 0xF)
+                    backoff = MAX_BO  - (rand() % (int)ceil(MAX_BO/2)) ;
+                else
+                    ASSERT(false);
+            }
+            ASSERT(backoff <= MAX_BO);
+            if ((nextTxTime + ((int)backoff)*SimTime(BO_INT,SIMTIME_US)) <= maxBOtime) {
+                nextTxTime = mySchedule->beaconReference + ((int)nextTxDRB)*mySchedule->drbLength;
+
+                //backoff will be enforced by FrameExchange and contention modules
+                ((MacParameters *)params)->setCwMin(AC_LEGACY, backoff);
+                ((MacParameters *)params)->setCwMulticast(AC_LEGACY, backoff);
+                done = true;
+            } else {
+                nextTxDRB+=1;
+                if (nextTxDRB <  mySchedule->numDRBs)
+                    continue;
+                else { //Cannot Tx during this frame
+                   nextTxTime = SimTime::ZERO;
+                   done = true;
+                }
+            }
+
+        }
+        else {//Cannot Tx during this frame
+            nextTxTime = SimTime::ZERO;
+            done = true;
+        }
+    }
+    return nextTxTime;
+}
+
+
+void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
+{
+    ASSERT(!frameExchange);
+    bool broadOrMulticast = utils->isBroadcastOrMulticast(frame);
+    simtime_t nextTxTime = setUpNextTx();
+    if (nextTxTime != SimTime::ZERO) {   //Set up actual frame exchange
+        simtime_t now = simTime();
         if (broadOrMulticast)
             utils->setFrameMode(frame, rateSelection->getModeForMulticastDataOrMgmtFrame(frame));
         else
@@ -387,9 +414,6 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         context.statistics = statistics;
 
         bool useRtsCts = frame->getByteLength() > params->getRtsThreshold();
-
-        if (frame->getType() == ST_AUTHENTICATION)
-            int a = 0;
 
         if (broadOrMulticast) {
             frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
@@ -408,12 +432,15 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
             else
                 scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
         }
+    } else {
+        //Wait until next beacon interval -- schedule update function checks for pending tx
+
     }
 }
 
-//DT: Edited to use queue to store for retransmission, now need to track retry attempts (may need to use different object in the queue
+//Edited to use queue to store for retransmission, now need to track retry attempts (may need to use different object in the queue
 void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
-{//DT: TODO: rewrite this so it is more logical (!successful first, to eliminate duplicate lines of code for checking if tx queue is empty
+{//FIXME: Rewrite this for better readability (!successful first, to eliminate duplicate lines of code for checking if tx queue is empty
     EV_INFO << "Frame exchange finished" << std::endl;
 
     txElem *elem = nullptr;
@@ -432,10 +459,7 @@ void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
             elem = nullptr;
             if (!transmissionQueue.isEmpty())
                 elem = check_and_cast<txElem *>(transmissionQueue.front());
-        } else {
-            //Ieee80211DataOrMgmtFrame *frame = new Ieee80211DataOrMgmtFrame(*elem->frame);
-            //delete (elem->frame);
-            //elem->frame = frame;
+        } else { //Do nothin
         }
     }
     delete frameExchange;

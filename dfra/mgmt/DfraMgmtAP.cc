@@ -151,7 +151,9 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
         schedule = nullptr;
     }
 
+    //When this function call externally, need to deep copy sched to schedule (probably use better variable names)
 
+//Below here is code for setting schedule, eventually implemented externally
     schedule = new Schedule(8, staList.size());
     int numDRBs = schedule->numDRBs; // temporarily static
     //Build schedule (will eventually be done externally)
@@ -182,9 +184,10 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
         schedule->apSchedule[j] = (BYTE)0x11;
     }
 
+//Above here is code for setting schedule, eventually implemented externally
 
+//Consider
     schedule->beaconReference = simTime();
-
     //Send down AP schedule
     if (mySchedule) {
         delete mySchedule;
@@ -192,7 +195,7 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
     }
 
     mySchedule = new SchedulingInfo(schedule->numDRBs);
-    mySchedule->aid = -1;     //-1 used for AP
+    mySchedule->aid = -1;     //-1 reserved for AP
 
    /* mySchedule->mysched = schedule->apSchedule;
     mySchedule->frameTypes = schedule->frameTypes;*/
@@ -211,7 +214,6 @@ void DfraMgmtAP::setSchedule(Schedule *sched)//Placeholder parameter for future 
 void DfraMgmtAP::sendBeacon()
 {
     //FIXME:setSchedule will be called externally, and this will revert back to only building the beacon from existing values
-    //          Ensure volatility/mutex is respected, as may cause issues if values are changing from external sources while this function is executing
     setSchedule(nullptr);
 
 

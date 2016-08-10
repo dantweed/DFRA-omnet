@@ -102,6 +102,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
         SchedulingInfo *mySchedule;
         int currDRBnum = 0;
 
+        //Struct for managing tx retries in UpperMAC rather than Contention/FrameExchange
         struct txElem : cObject {
             int retryNumber;;
             Ieee80211DataOrMgmtFrame *frame = nullptr;
@@ -122,6 +123,8 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
 
         void sendAck(Ieee80211DataOrMgmtFrame *frame);
         void sendCts(Ieee80211RTSFrame *frame);
+
+        simtime_t setUpNextTx();
 
     public:
         DfraUpperMac();
