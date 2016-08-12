@@ -33,110 +33,6 @@ using namespace inet::utils;
 namespace inet {
 namespace ieee80211 {
 
-#if 0
-//TODO with the introduction of earlyAckTimeout, this class has become obsolete
-SendDataWithAckFsmBasedFrameExchange::SendDataWithAckFsmBasedFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory accessCategory) :
-    FsmBasedFrameExchange(context, callback), frame(frame), txIndex(txIndex), accessCategory(accessCategory)
-{
-    frame->setDuration(params->getSifsTime() + utils->getAckDuration());
-}
-
-SendDataWithAckFsmBasedFrameExchange::~SendDataWithAckFsmBasedFrameExchange()
-{
-    delete frame;
-    if (ackTimer)
-        delete cancelEvent(ackTimer);
-}
-
-IFrameExchange::FrameProcessingResult SendDataWithAckFsmBasedFrameExchange::handleWithFSM(EventType event, cMessage *frameOrTimer)
-{
-    FrameProcessingResult result = IGNORED;
-    Ieee80211Frame *receivedFrame = event == EVENT_FRAMEARRIVED ? check_and_cast<Ieee80211Frame *>(frameOrTimer) : nullptr;
-
-    FSMA_Switch(fsm) {
-        FSMA_State(INIT) {
-            FSMA_Enter();
-            FSMA_Event_Transition(Start,
-                    event == EVENT_START,
-                    TRANSMITDATA,
-                    transmitDataFrame();
-                    );
-        }
-        FSMA_State(TRANSMITDATA) {
-            FSMA_Enter();
-            FSMA_Event_Transition(Wait - ACK,
-                    event == EVENT_TXFINISHED,
-                    WAITACK,
-                    scheduleAckTimeout();
-                    );
-            FSMA_Event_Transition(Frame - arrived,
-                    event == EVENT_FRAMEARRIVED,
-                    TRANSMITDATA,
-                    ;
-                    );
-        }
-        FSMA_State(WAITACK) {
-            FSMA_Enter();
-            FSMA_Event_Transition(Ack - arrived,
-                    event == EVENT_FRAMEARRIVED && isAck(receivedFrame),
-                    SUCCESS,
-                    result = PROCESSED_DISCARD;
-                    );
-            FSMA_Event_Transition(Frame - arrived,
-                    event == EVENT_FRAMEARRIVED && !isAck(receivedFrame),
-                    FAILURE,
-                    ;
-                    );
-            FSMA_Event_Transition(Ack - timeout - retry,
-                    event == EVENT_TIMER && retryCount < params->getShortRetryLimit(),
-                    TRANSMITDATA,
-                    retryDataFrame();
-                    );
-            FSMA_Event_Transition(Ack - timeout - giveup,
-                    event == EVENT_TIMER && retryCount == params->getShortRetryLimit(),
-                    FAILURE,
-                    ;
-                    );
-        }
-        FSMA_State(SUCCESS) {
-            FSMA_Enter(reportSuccess());
-        }
-        FSMA_State(FAILURE) {
-            FSMA_Enter(reportFailure());
-        }
-    }
-    return result;
-}
-
-void SendDataWithAckFsmBasedFrameExchange::transmitDataFrame()
-{
-    retryCount = 0;
-    AccessCategory ac = accessCategory; // abbreviate
-    contention[txIndex]->transmitContentionFrame(dupPacketAndControlInfo(frame), params->getAifsTime(ac), params->getEifsTime(ac), params->getCwMin(ac), params->getCwMax(ac), params->getSlotTime(), retryCount, this);
-}
-
-void SendDataWithAckFsmBasedFrameExchange::retryDataFrame()
-{
-    retryCount++;
-    frame->setRetry(true);
-    AccessCategory ac = accessCategory; // abbreviate
-    contention[txIndex]->transmitContentionFrame(dupPacketAndControlInfo(frame), params->getAifsTime(ac), params->getEifsTime(ac), params->getCwMin(ac), params->getCwMax(ac), params->getSlotTime(), retryCount, this);
-}
-
-void SendDataWithAckFsmBasedFrameExchange::scheduleAckTimeout()
-{
-    if (ackTimer == nullptr)
-        ackTimer = new cMessage("timeout");
-    simtime_t t = simTime() + utils->getAckFullTimeout();
-    scheduleAt(t, ackTimer);
-}
-
-bool SendDataWithAckFsmBasedFrameExchange::isAck(Ieee80211Frame *frame)
-{
-    return dynamic_cast<Ieee80211ACKFrame *>(frame) != nullptr;
-}
-#endif
-
 //------------------------------
 
 SendDataWithAckFrameExchange::SendDataWithAckFrameExchange(FrameExchangeContext *context, IFinishedCallback *callback, Ieee80211DataOrMgmtFrame *dataFrame, int txIndex, AccessCategory accessCategory) :
@@ -193,21 +89,8 @@ void SendDataWithAckFrameExchange::processTimeout(int step)
     }
 }
 
-#ifdef NS3_VALIDATION
-static const char *ac[] = {"AC_BK", "AC_BE", "AC_VI", "AC_VO", "???"};
-#endif
-
 void SendDataWithAckFrameExchange::processInternalCollision(int step)
 {
-#ifdef NS3_VALIDATION
-    const char *lastSeq = strchr(dataFrame->getName(), '-');
-    if (lastSeq == nullptr)
-        lastSeq = "-1";
-    else
-        lastSeq++;
-    std::cout << "IC: " << "ac = " << ac[defaultAccessCategory] << ", seq = " << lastSeq << endl;
-#endif
-
     switch (step) {
         case 0: retry(); break;
         default: ASSERT(false);
@@ -217,17 +100,8 @@ void SendDataWithAckFrameExchange::processInternalCollision(int step)
 void SendDataWithAckFrameExchange::retry()//DT retry means fail!
 {
     releaseChannel();
-/*
-    if (retryCount + 1 < params->getShortRetryLimit()) {
-        statistics->frameTransmissionUnsuccessful(dataFrame, retryCount);
-        dataFrame->setRetry(true);
-        retryCount++;
-        gotoStep(0);
-    }
-    else {*/
-        statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, retryCount);
-        fail();
-    //}
+    statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, retryCount);
+    fail();
 }
 
 //------------------------------
@@ -295,29 +169,15 @@ void SendDataWithRtsCtsFrameExchange::processInternalCollision(int step)
 void SendDataWithRtsCtsFrameExchange::retryRtsCts()
 {
     releaseChannel();
-    if (shortRetryCount < params->getShortRetryLimit()) {
-        shortRetryCount++;
-        gotoStep(0);
-    }
-    else {
-        statistics->frameTransmissionGivenUp(dataFrame);
-        fail();
-    }
+    statistics->frameTransmissionGivenUp(dataFrame);
+    fail();
 }
 
 void SendDataWithRtsCtsFrameExchange::retryData()
 {
     releaseChannel();
-    if (longRetryCount < params->getLongRetryLimit()) {
-        statistics->frameTransmissionUnsuccessful(dataFrame, longRetryCount);
-        dataFrame->setRetry(true);
-        longRetryCount++;
-        gotoStep(0);
-    }
-    else {
-        statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, longRetryCount);
-        fail();
-    }
+    statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, longRetryCount);
+    fail();
 }
 
 //------------------------------
@@ -356,14 +216,8 @@ void SendMulticastDataFrameExchange::startContention()
 }
 
 void SendMulticastDataFrameExchange::internalCollision(int txIndex)
-{ //DT: Using internal collision to mean not able to win the channel at first DRB
-//    if (++retryCount < params->getShortRetryLimit()) {
-//        dataFrame->setRetry(true);
-//        startContention();
-//    }
-//    else {
-        reportFailure();
-  //  }
+{
+    reportFailure();
 }
 
 void SendMulticastDataFrameExchange::channelAccessGranted(int txIndex)

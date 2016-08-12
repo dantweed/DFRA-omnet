@@ -81,8 +81,8 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
     //Station schedule
     struct SchedulingInfo{
         int aid =0;
-        BYTE *frameTypes;
-        BYTE *mysched;
+        BYTE *frameTypes = nullptr;
+        BYTE *mysched = nullptr;
         simtime_t beaconReference;
         simtime_t drbLength;
         int numDRBs;
@@ -93,10 +93,10 @@ class INET_API DfraMgmtSTA : public Ieee80211MgmtBase, protected cListener //INE
             frameTypes = new BYTE[(int)ceil(numDRBs/8)];
         }
         ~SchedulingInfo(){
-            /*if (mysched) delete mysched;
+            if (mysched) delete mysched;
             if (frameTypes) delete frameTypes;
             mysched = nullptr;
-            frameTypes = nullptr;*/
+            frameTypes = nullptr;
         }
     };
 

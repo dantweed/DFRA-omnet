@@ -99,7 +99,7 @@ class INET_API DfraUpperMac : public cSimpleModule, public IUpperMac, protected 
                 frameTypes = nullptr;
             }
         };
-        SchedulingInfo *mySchedule;
+        SchedulingInfo *mySchedule = nullptr;
         int currDRBnum = 0;
 
         //Struct for managing tx retries in UpperMAC rather than Contention/FrameExchange

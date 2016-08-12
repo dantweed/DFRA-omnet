@@ -338,14 +338,14 @@ void StepBasedFrameExchange::handleTimeout()
 {
     operation = NONE;
     processTimeout(step);
+//DT: processTimeout always results in failure
     if (status == INPROGRESS) {
         logStatus("processTimeout()");
         checkOperation(operation, "processTimeout()");
         proceed();
     }
-    else {
+    else
         cleanupAndReportResult(); // should be the last call in the lifetime of the object
-    }
 }
 
 void StepBasedFrameExchange::cleanupAndReportResult()

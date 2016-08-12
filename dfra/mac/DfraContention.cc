@@ -118,12 +118,6 @@ void DfraContention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, i
 
     //int cw = computeCw(cwMin, cwMax, retryCount);
     backoffSlots = cwMin;//intrand(cw + 1); //DT: Change to deterministic from higher levels (not hard)
-
-#ifdef NS3_VALIDATION
-    static const char *AC[] = {"AC_BE", "AC_BK", "AC_VI", "AC_VO"};
-    std::cout << "GB: " << "ac = " << AC[getIndex()] << ", cw = " << cw << ", slots = " << backoffSlots << ", nth = " << getRNG(0)->getNumbersDrawn() << std::endl;
-#endif
-
     handleWithFSM(START, nullptr);
 }
 
@@ -159,6 +153,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
             FSMA_Ignore_Event(event==CHANNEL_RELEASED);
             FSMA_Fail_On_Unhandled_Event();
         }
+        //Should neve enter this state, should fail
         FSMA_State(DEFER) {
             FSMA_Enter(mac->sendDownPendingRadioConfigMsg());
             FSMA_Event_Transition(Restarting-IFS-and-Backoff,
@@ -282,17 +277,8 @@ void DfraContention::scheduleTransmissionRequest()
     ASSERT(mediumFree);
 
     simtime_t now = simTime();
-    bool useEifs = endEifsTime > now + ifs;//Dropped EIFS for more predictability
+
     simtime_t waitInterval = (ifs) + backoffSlots * slotTime;
-//DT
-/*    if (backoffOptimization && fsm.getState() == IDLE) {
-        // we can pretend the frame has arrived into the queue a little bit earlier, and may be able to start transmitting immediately
-        simtime_t elapsedFreeChannelTime = now - lastChannelBusyTime;
-        simtime_t elapsedIdleTime = now - lastIdleStartTime;
-        backoffOptimizationDelta = std::min(waitInterval, std::min(elapsedFreeChannelTime, elapsedIdleTime));
-        if (backoffOptimizationDelta > SIMTIME_ZERO)
-            waitInterval -= backoffOptimizationDelta;
-    }*/
     scheduledTransmissionTime = now + waitInterval;
     scheduleTransmissionRequestFor(scheduledTransmissionTime);
 }
@@ -328,15 +314,6 @@ void DfraContention::revokeBackoffOptimization() //TODO: What does this do?
     backoffOptimizationDelta = SIMTIME_ZERO;
     cancelTransmissionRequest();
     computeRemainingBackoffSlots();
-
-#ifdef NS3_VALIDATION
-    int cw = computeCw(cwMin, cwMax, retryCount);
-    backoffSlots = intrand(cw + 1);
-
-    static const char *AC[] = {"AC_BE", "AC_BK", "AC_VI", "AC_VO"};
-    std::cout << "GB: " << "ac = " << AC[getIndex()] << ", cw = " << cw << ", slots = " << backoffSlots << ", nth = " << getRNG(0)->getNumbersDrawn() << std::endl;
-#endif
-
     scheduleTransmissionRequest();
 }
 

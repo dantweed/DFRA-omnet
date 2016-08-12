@@ -98,7 +98,7 @@ std::ostream& operator<<(std::ostream& os, const DfraMgmtSTA::AssociatedAPInfo& 
 
 DfraMgmtSTA::~DfraMgmtSTA()
 {
-    delete mySchedule;
+    if (mySchedule) delete mySchedule;
 }
 
 void DfraMgmtSTA::initialize(int stage)
@@ -903,7 +903,11 @@ void DfraMgmtSTA::storeAPInfo(const MACAddress& address, const Ieee80211BeaconFr
     //XXX where to get this from?
     //ap->rxPower = ...
 }
-void DfraMgmtSTA::finish() { if (mySchedule) delete mySchedule;}
+void DfraMgmtSTA::finish() {
+    if (mySchedule) delete mySchedule;
+    mySchedule = nullptr;
+}
+
 } // namespace ieee80211
 
 } // namespace inet

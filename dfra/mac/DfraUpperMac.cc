@@ -394,6 +394,7 @@ simtime_t DfraUpperMac::setUpNextTx(){
 
 void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, int txIndex, AccessCategory ac)
 {
+    Enter_Method_Silent();
     ASSERT(!frameExchange);
     bool broadOrMulticast = utils->isBroadcastOrMulticast(frame);
     simtime_t nextTxTime = setUpNextTx();
