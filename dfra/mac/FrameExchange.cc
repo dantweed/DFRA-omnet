@@ -189,6 +189,7 @@ void StepBasedFrameExchange::start()
 {
     EV_DETAIL << "Starting frame exchange " << getClassName() << std::endl;
     ASSERT(step == 0);
+    ASSERT(status == INPROGRESS);
     operation = GOTO_STEP;
     gotoTarget = 0;
     proceed();
@@ -201,7 +202,7 @@ void StepBasedFrameExchange::proceed()
             step = gotoTarget;
         else
             step++;
-        EV_DETAIL << "Doing step " << step << "\n";
+        EV_DETAIL << "Doing step " << step <<  "\n";
         operation = NONE;
         doStep(step);
         if (status == INPROGRESS) {

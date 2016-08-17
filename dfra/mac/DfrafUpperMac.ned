@@ -18,14 +18,17 @@
 //
 
 package dfra.dfra.mac;
+
 import inet.linklayer.ieee80211.mac.IUpperMac;
+
 
 //
 // UpperMac for DCF mode.
 //
 simple DfraUpperMac like IUpperMac
 {
-    parameters:
+    
+	parameters:
         string macModule;
         string rxModule;
         string txModule;
@@ -50,4 +53,5 @@ simple DfraUpperMac like IUpperMac
         string reassemblyClass = default("BasicReassembly");
         @display("i=block/layer");
         @class(ieee80211::DfraUpperMac);
+        @signal[NF_LINK_BREAK](type=inet::ieee80211::Ieee80211DataOrMgmtFrame);
 }

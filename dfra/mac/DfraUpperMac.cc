@@ -131,8 +131,8 @@ IMacParameters *DfraUpperMac::extractParameters(const IIeee80211Mode *slowestMan
 void DfraUpperMac::handleMessage(cMessage *msg)
 {
     if (msg->getKind() == ST_FRAME_EXCHANGE) {//DRB scheduling control
-        frameExchange->start();
         delete msg;
+        if (frameExchange) frameExchange->start();
     }
     else if (msg->getContextPointer() != nullptr)
         ((MacPlugin *)msg->getContextPointer())->handleSelfMessage(msg);
@@ -419,7 +419,7 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
         if (broadOrMulticast) {
             frameExchange = new SendMulticastDataFrameExchange(&context, this, frame, txIndex, ac);
             if (frame->getType() == ST_BEACON || nextTxTime < now)
-                frameExchange->start(); //FIXME: temporary fix for beacons so reference matches send time, need to correct this
+                scheduleAt(now, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
             else
                 scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
         }
@@ -428,8 +428,8 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
                 frameExchange = new SendDataWithRtsCtsFrameExchange(&context, this, frame, txIndex, ac); //DT: not currently used
             else
                 frameExchange = new SendDataWithAckFrameExchange(&context, this, frame, txIndex, ac);
-            if (nextTxTime < now)
-                frameExchange->start();
+            if (nextTxTime <= now)
+                scheduleAt(now, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
             else
                 scheduleAt(nextTxTime, new cMessage("startFrameExchange", ST_FRAME_EXCHANGE));
         }
@@ -443,8 +443,10 @@ void DfraUpperMac::startSendDataFrameExchange(Ieee80211DataOrMgmtFrame *frame, i
 void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
 {//FIXME: Rewrite this for better readability (!successful first, to eliminate duplicate lines of code for checking if tx queue is empty
     EV_INFO << "Frame exchange finished" << std::endl;
-
+    delete frameExchange;
+    frameExchange = nullptr;
     txElem *elem = nullptr;
+
     if (successful) {
         elem = check_and_cast<txElem *>(transmissionQueue.pop());
         delete elem;
@@ -454,17 +456,16 @@ void DfraUpperMac::frameExchangeFinished(IFrameExchange *what, bool successful)
     }
     else {
         elem = check_and_cast<txElem *>(transmissionQueue.front());
-        if (++elem->retryNumber > params->getShortRetryLimit()) { //Drop after retry limit (not RTS/CTS supported yet)
+        if (++elem->retryNumber > params->getShortRetryLimit()) { //Drop after retry limit (no RTS/CTS supported yet)
             elem = check_and_cast<txElem *>(transmissionQueue.pop());
             delete elem;
             elem = nullptr;
             if (!transmissionQueue.isEmpty())
                 elem = check_and_cast<txElem *>(transmissionQueue.front());
-        } else { //Do nothin
+        } else { //Do nothing
         }
     }
-    delete frameExchange;
-    frameExchange = nullptr;
+
     if (elem)
         startSendDataFrameExchange(elem->frame, 0, AC_LEGACY);
 }

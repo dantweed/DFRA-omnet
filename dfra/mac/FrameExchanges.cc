@@ -20,6 +20,7 @@
 #include "dfra/mac/FrameExchanges.h"
 #include "inet/common/INETUtils.h"
 #include "inet/common/FSMA.h"
+#include "inet/common/NotifierConsts.h"
 #include "IContention.h"
 #include "ITx.h"
 #include "IRx.h"
@@ -58,9 +59,12 @@ std::string SendDataWithAckFrameExchange::info() const
 
 void SendDataWithAckFrameExchange::doStep(int step)
 {
+
     switch (step) {
-        case 0: startContentionIfNeeded(retryCount); break;
-        case 1: transmitFrame(dupPacketAndControlInfo(dataFrame)); break;
+        case 0: startContentionIfNeeded(retryCount);
+            break;
+        case 1: transmitFrame(dupPacketAndControlInfo(dataFrame));
+            break;
         case 2: {
             if (params->getUseFullAckTimeout())
                 expectFullReplyWithin(utils->getAckFullTimeout());
@@ -102,6 +106,7 @@ void SendDataWithAckFrameExchange::retry()//DT retry means fail!
     releaseChannel();
     statistics->frameTransmissionUnsuccessfulGivingUp(dataFrame, retryCount);
     fail();
+    ownerModule->emit(NF_LINK_BREAK, dataFrame);
 }
 
 //------------------------------

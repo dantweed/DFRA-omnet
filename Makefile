@@ -480,6 +480,7 @@ $O/dfra/mac/FrameExchanges.o: dfra/mac/FrameExchanges.cc \
 	$(INET_PROJ)/src/inet/common/INETMath.h \
 	$(INET_PROJ)/src/inet/common/INETUtils.h \
 	$(INET_PROJ)/src/inet/common/InitStages.h \
+	$(INET_PROJ)/src/inet/common/NotifierConsts.h \
 	$(INET_PROJ)/src/inet/common/Units.h \
 	$(INET_PROJ)/src/inet/common/geometry/common/Coord.h \
 	$(INET_PROJ)/src/inet/common/geometry/common/EulerAngles.h \

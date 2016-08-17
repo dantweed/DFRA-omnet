@@ -113,11 +113,7 @@ void DfraContention::startContention(simtime_t ifs, simtime_t eifs, int cwMin, i
     this->retryCount = retryCount;
     this->callback = callback;
 
-    if (retryCount >1)
-        int rtt= retryCount;
-
-    //int cw = computeCw(cwMin, cwMax, retryCount);
-    backoffSlots = cwMin;//intrand(cw + 1); //DT: Change to deterministic from higher levels (not hard)
+    backoffSlots = cwMin;
     handleWithFSM(START, nullptr);
 }
 
@@ -135,6 +131,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
     EV_DEBUG << "handleWithFSM: processing event " << getEventName(event) << "\n";
     bool finallyReportInternalCollision = false;
     bool finallyReportChannelAccessGranted = false;
+    bool finallyReportFailure = false;
     FSMA_Switch(fsm) {
         FSMA_State(IDLE) {
             FSMA_Enter(mac->sendDownPendingRadioConfigMsg());
@@ -143,10 +140,15 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     IFS_AND_BACKOFF,
                     scheduleTransmissionRequest();
                     );
-            FSMA_Event_Transition(Busy,
+            /*FSMA_Event_Transition(Busy,
                     event == START && !mediumFree,
                     DEFER,//DT
                     ;
+                    );*/
+            FSMA_Event_Transition(Busy,
+                    event == START && !mediumFree,
+                    IDLE,//DT
+                    finallyReportFailure = true;lastIdleStartTime = simTime();
                     );
             FSMA_Ignore_Event(event==MEDIUM_STATE_CHANGED);
             FSMA_Ignore_Event(event==CORRUPTED_FRAME_RECEIVED);
@@ -154,7 +156,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
             FSMA_Fail_On_Unhandled_Event();
         }
         //Should neve enter this state, should fail
-        FSMA_State(DEFER) {
+        /*FSMA_State(DEFER) {
             FSMA_Enter(mac->sendDownPendingRadioConfigMsg());
             FSMA_Event_Transition(Restarting-IFS-and-Backoff,
                     event == MEDIUM_STATE_CHANGED && mediumFree,
@@ -167,7 +169,7 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     endEifsTime = simTime() + eifs;
                     );
             FSMA_Fail_On_Unhandled_Event();
-        }
+        }*/
         FSMA_State(IFS_AND_BACKOFF) {
             FSMA_Enter();
             FSMA_Event_Transition(Backoff-expired,
@@ -175,12 +177,17 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
                     OWNING,
                     finallyReportChannelAccessGranted = true;
                     );
-            FSMA_Event_Transition(Defer-on-channel-busy,
+           /* FSMA_Event_Transition(Defer-on-channel-busy,
                     event == MEDIUM_STATE_CHANGED && !mediumFree,
                     DEFER,
                     cancelTransmissionRequest();
                     computeRemainingBackoffSlots();//DT
-                    );
+                    );*/
+            FSMA_Event_Transition(Defer-on-channel-busy,
+                   event == MEDIUM_STATE_CHANGED && !mediumFree,
+                   IDLE,
+                   finallyReportFailure = true;lastIdleStartTime = simTime();
+                   );
             FSMA_Event_Transition(optimized-internal-collision,
                     event == INTERNAL_COLLISION && backoffOptimizationDelta != SIMTIME_ZERO,
                     IFS_AND_BACKOFF,
@@ -212,11 +219,13 @@ void DfraContention::handleWithFSM(EventType event, cMessage *msg)
     emit(stateChangedSignal, fsm.getState());
     if (finallyReportChannelAccessGranted)
         reportChannelAccessGranted();
-    if (finallyReportInternalCollision)
-        reportInternalCollision();
+    if (finallyReportInternalCollision || finallyReportFailure)
+        reportInternalCollision(); //Using internal collision to avoid changing interface (for now)
     if (hasGUI())
         updateDisplayString();
 }
+
+
 
 void DfraContention::mediumStateChanged(bool mediumFree)
 {
